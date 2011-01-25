@@ -3,8 +3,11 @@
 // load Tonic library
 require_once '../lib/tonic.php';
 
-// load examples
-require_once '../examples/examples.php';
+$classes = glob("../classes/*.class.php");
+foreach ($classes as $class) {
+	// load class
+	require_once $class;
+}
 
 // handle request
 $request = new Request();
