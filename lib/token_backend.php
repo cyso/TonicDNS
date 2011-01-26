@@ -75,6 +75,23 @@ class Token {
 	 * @var string
 	 */
 	public $hash;
+
+	/**
+	 * Default constructor.
+	 * @access public
+	 */
+	public function __construct() { }
+
+	/**
+	 * Convenience constructor to completely fill a Token object during construction.
+	 * @access public
+	 */
+	public function __construct($username, $password, $valid_until, $hash) {
+		$this->username = $username;
+		$this->password = $password;
+		$this->valid_until = $valid_until;
+		$this->hash = $hash;
+	}
 }
 
 ?>
