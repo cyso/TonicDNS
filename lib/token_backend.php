@@ -1,0 +1,46 @@
+<?php
+/**
+ * Interface for a Token backend.
+ * @namespace Tonic\Lib
+ */
+interface TokenBackend {
+	/**
+	 * Should create a new Token, store it in the backend and return it.
+	 * @access public
+	 * @return mixed Token object.
+	 */
+	public function createToken();
+
+	/**
+	 * Should retrieve a Token based on the passed ID.
+	 * @access public
+	 * @param string $token_id Token ID
+	 * @return mixed Token object, or null if it could not be retrieved.
+	 */
+	public function retrieveToken($token_id);
+
+	/**
+	 * Should refresh the duration of the passed Token.
+	 * @access public
+	 * @param mixed $token Token object.
+	 */
+	public function refreshToken($token);
+
+	/**
+	 * Validate the passed Token object, and determine if it is still valid. Any invalid Token 
+	 * found in the backend should be cleaned up by this function.
+	 * @access public
+	 * @param mixed $token Token object.
+	 * @return boolean True if Token is still valid, false if it is not.
+	 */
+	public function validateToken($token);
+
+	/**
+	 * Destroy the given Token object, by invalidating and removing it from the backend.
+	 * @access public
+	 * @param mixed $token Token object.
+	 */
+	public function destroyToken($token);
+}
+
+?>
