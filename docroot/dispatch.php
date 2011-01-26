@@ -3,6 +3,14 @@
 // load Tonic library
 require_once '../lib/tonic.php';
 
+// load all other libraries
+$libraries = glob("../libs/*.php");
+foreach ($libraries as $library) {
+	// load library
+	require_once $library;
+}
+
+// load classes
 $classes = glob("../classes/*.class.php");
 foreach ($classes as $class) {
 	// load class
