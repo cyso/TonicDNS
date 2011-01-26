@@ -7,6 +7,7 @@ interface TokenBackend {
 	/**
 	 * Should create a new Token, store it in the backend and return it.
 	 * @access public
+	 * @param mixed $token Token object with the username and password properties set.
 	 * @return mixed Token object.
 	 */
 	public function createToken($token);
@@ -23,7 +24,7 @@ interface TokenBackend {
 	 * Should refresh the duration of the passed Token.
 	 * @access public
 	 * @param mixed $token Token object.
-	 * @return boolean True if successfull, false if the Token could not be refreshed.
+	 * @return boolean True if successful, false if the Token could not be refreshed.
 	 */
 	public function refreshToken($token);
 
@@ -40,6 +41,7 @@ interface TokenBackend {
 	 * Destroy the given Token object, by invalidating and removing it from the backend.
 	 * @access public
 	 * @param mixed $token Token object.
+	 * @return boolean True if succesful, false if the Token could not be destroyed.
 	 */
 	public function destroyToken($token);
 }
