@@ -95,6 +95,18 @@ class Request {
      * @var str
      */
     public $data;
+
+    /**
+     * Query string
+     * @var str
+     */
+    public $queryString;
+
+    /**
+     * Content-Type of the request
+     * @var str
+     */
+    public $requestType;
     
     /**
      * Array of if-match etags
@@ -275,6 +287,19 @@ class Request {
         
         // get HTTP request data
         $this->data = $this->getConfig($config, 'data', NULL, file_get_contents("php://input"));
+
+        // get HTTP request type
+        if (function_exists("apache_request_headers")) {
+                $h = apache_request_headers();
+                foreach (apache_request_headers() as $k => $h) {
+                        if (strtolower($k) === "content-type") {
+                                $this->requestType = $h;
+                        }
+                }
+        }
+
+        // get HTTP query string
+        $this->queryString = $this->getConfig($config, NULL, 'QUERY_STRING');
         
         // conditional requests
         if ($config['ifMatch']) {
@@ -469,7 +494,7 @@ class Request {
  */
 class Resource {
     
-    private $parameters = array();
+    protected $parameters = array();
     
     /**
      * Resource constructor

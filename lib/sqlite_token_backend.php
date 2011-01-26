@@ -1,4 +1,5 @@
 <?php
+require_once "token_backend.php";
 /**
  * Implements the TokenBackend interface using and SQLite database backend. This class will throw exceptions.
  *
