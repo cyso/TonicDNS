@@ -9,7 +9,7 @@ interface TokenBackend {
 	 * @access public
 	 * @return mixed Token object.
 	 */
-	public function createToken();
+	public function createToken($token);
 
 	/**
 	 * Should retrieve a Token based on the passed ID.
@@ -23,6 +23,7 @@ interface TokenBackend {
 	 * Should refresh the duration of the passed Token.
 	 * @access public
 	 * @param mixed $token Token object.
+	 * @return boolean True if successfull, false if the Token could not be refreshed.
 	 */
 	public function refreshToken($token);
 
@@ -41,6 +42,37 @@ interface TokenBackend {
 	 * @param mixed $token Token object.
 	 */
 	public function destroyToken($token);
+}
+
+/**
+ * Defines the Token object for use with a Token backend.
+ * @namespace Tonic\Lib
+ */
+class Token {
+	/**
+	 * Username for this Token. Used during createToken.
+	 * @access public
+	 * @var string
+	 */
+	public $username;
+	/**
+	 * Password for this Token. Used during createToken.
+	 * @access public
+	 * @var string
+	 */
+	public $password;
+	/**
+	 * Validity of this Token. If this date lies in the past, the Token is invalid. Used during refreshToken and validateToken.
+	 * @access public
+	 * @var date
+	 */
+	public $valid_until;
+	/**
+	 * Hashed version of the above information. Used during createToken, retrieveToken, refreshToken, validateToken and destroyToken.
+	 * @access public
+	 * @var string
+	 */
+	public $hash;
 }
 
 ?>
