@@ -50,7 +50,7 @@ class SqliteTokenBackend implements TokenBackend {
 	private $duration = 60;
 
 	/**
-	 * Constructs a new SqliteTokenBackend, and connects to the SQLite database. Generates an E_USER_ERROR if
+	 * Constructs a new SqliteTokenBackend, and connects to the SQLite database. Throws an Exception on error.
 	 * a database connection could not be established.
 	 * @access public
 	 */
@@ -59,10 +59,6 @@ class SqliteTokenBackend implements TokenBackend {
 			$this->connection = new PDO("sqlite:" . $this->database_location);
 		} catch (Exception $e) {
 			throw new Exception("Failed to open database connection");
-		}
-		if ($this->connection === false) {
-			throw new Exception($sqliteerror);
-			return;
 		}
 	}
 
@@ -79,17 +75,25 @@ class SqliteTokenBackend implements TokenBackend {
 		if (empty($token->username) || empty($token->password)) {
 			return null;
 		}
-		if ($result = $this->connection->query(sprintf("SELECT user_id FROM users WHERE username = '%s' AND password = '%s' LIMIT 1;", sqlite_escape_string($token->username), sha1($token->password)))) {
-			if ($result->rowCount() != 1) {
+		if (($result = $this->connection->query(sprintf("SELECT user_id FROM users WHERE username = '%s' AND password = '%s' LIMIT 1;", sqlite_escape_string($token->username), sha1($token->password)))) !== false) {
+			$results = $result->fetchAll(PDO::FETCH_ASSOC);
+			if (count($results) != 1) {
 				return null;
 			}
-			$user = $result->fetch(PDO::FETCH_ASSOC);
+			$user = $results[0];
 			$token->valid_until = strtotime(sprintf("+%d second", $this->duration));
-			$token->hash = hash_hmac("sha1", sprintf("%s:%s", sqlite_escape_string($token->username), $token->password));
+			$token->hash = hash_hmac("sha1", sprintf("%s:%s", sqlite_escape_string($token->username), $token->password), $this->secret);
 
-			if (!$this->connection->exec(sprintf("INSERT INTO tokens (token_hash, token_valid_until, token_user_id) VALUES ('%s', '%s', %d);", $token->hash, $token->valid_until, $user['user_id']))) {
+			if ($this->refreshToken($token->hash) !== false) {
+				unset($token->password);
+				return $token;
+			}
+
+			$r = $this->connection->exec(sprintf("INSERT INTO tokens (token_hash, token_valid_until, token_user_id) VALUES ('%s', '%s', %d);", $token->hash, $token->valid_until, $user['user_id']));
+			if ($r === false || $r !== 1) {
 				return null;
 			} else {
+				unset($token->password);
 				return $token;
 			}
 		} else {
@@ -112,12 +116,12 @@ class SqliteTokenBackend implements TokenBackend {
 		if ($t === false) {
 			return null;
 		}
-		$token = new Token($t['username'], null, $t['valid_until'], $t['token_hash']);
+		$token = new Token($t['username'], null, $t['token_valid_until'], $t['token_hash']);
 		return $token;
 	}
 
 	/**
-	 * Refreshes the duration of the passed Token.
+	 * Refreshes the duration of the passed Token. If the Token is expired, destroy it.
 	 * @access public
 	 * @param string $token_id Token ID.
 	 * @return boolean True if successful, false if the Token could not be refreshed.
@@ -127,22 +131,21 @@ class SqliteTokenBackend implements TokenBackend {
 		if ($token == null) {
 			return false;
 		}
-		$now = strtotime("now");
-		$then = strtotime($token->valid_until);
-		if (($now - $then) > 0) {
-			if (!$this->connection->exec(sprintf("UPDATE tokens SET valid_until = %d WHERE token_hash = '%s';", strtotime(sprintf("+%d second", $this->duration)), $token->token_hash))) {
+		if (strtotime("now") < $token->valid_until) {
+			if (!$this->connection->exec(sprintf("UPDATE tokens SET token_valid_until = %d WHERE token_hash = '%s';", strtotime(sprintf("+%d second", $this->duration)), $token->hash))) {
 				return false;
 			} else {
 				return true;
 			}
 		} else {
+			$this->destroyToken($token);
 			return false;
 		}
 	}
 
 	/**
-	 * Validates the passed Token object, and determines if it is still valid. If the Token is invalid,
-	 * it will be removed from the backend.
+	 * Validates the passed Token object, and determines if it is still valid. If the Token
+	 * is invalid, it will be removed from the backend.
 	 * @access public
 	 * @param mixed $token Token object.
 	 * @return boolean True if Token is still valid, false if it is not.

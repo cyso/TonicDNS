@@ -21,12 +21,12 @@ interface TokenBackend {
 	public function retrieveToken($token_id);
 
 	/**
-	 * Should refresh the duration of the passed Token.
+	 * Should refresh the duration of the passed Token. If the Token is expired, it should be destroyed.
 	 * @access public
-	 * @param mixed $token Token object.
+	 * @param mixed $token_id Token ID.
 	 * @return boolean True if successful, false if the Token could not be refreshed.
 	 */
-	public function refreshToken($token);
+	public function refreshToken($token_id);
 
 	/**
 	 * Validate the passed Token object, and determine if it is still valid. Any invalid Token 
@@ -85,6 +85,20 @@ class Token {
 		$this->password = $password;
 		$this->valid_until = $valid_until;
 		$this->hash = $hash;
+	}
+
+	/**
+	 * Returns an array representation of the Token object.
+	 * @access public
+	 * @return array Array representation of the Token object.
+	 */
+	public function toArray() {
+		return array (
+			"username" => $this->username,
+			"valid_until" => $valid_until,
+			"hash" => $hash,
+			"token" => $hash
+		);
 	}
 }
 
