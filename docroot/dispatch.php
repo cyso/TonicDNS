@@ -4,7 +4,7 @@
 require_once '../lib/tonic.php';
 
 // load all other libraries
-$libraries = glob("../libs/*.php");
+$libraries = glob("../lib/*.php");
 foreach ($libraries as $library) {
 	// load library
 	require_once $library;
