@@ -5,17 +5,17 @@ require_once "token_backend.php";
  *
  * This backend expects an SQLite3 database with the following structure:
  *
- * CREATE TABLE "main"."tokens" (
+ * CREATE TABLE "tokens" (
  * 	"token_hash" TEXT PRIMARY KEY NOT NULL UNIQUE ,
  * 	"token_valid_until" INTEGER NOT NULL ,
- * 	"token_user_id" INTEGER NOT NUL L
- * )
- * CREATE TABLE "main"."users" (
+ * 	"token_user_id" INTEGER NOT NULL
+ * );
+ * CREATE TABLE "users" (
  * 	"user_id" INTEGER PRIMARY KEY NOT NULL UNIQUE ,
  * 	"username" TEXT NOT NULL UNIQUE ,
  * 	"password" TEXT NOT NULL
- * )
- *
+ * );
+
  * The database should be available in the /db dir, relative to the root of the Tonic dir.
  *
  * @namespace Token\Lib
@@ -55,7 +55,11 @@ class SqliteTokenBackend implements TokenBackend {
 	 * @access public
 	 */
 	public function __construct() {
-		$this->connection = new SQLiteDatabase($this->database_location, 0666, $sqliteerror);
+		try {
+			$this->connection = new PDO("sqlite:" . $this->database_location);
+		} catch (Exception $e) {
+			throw new Exception("Failed to open database connection");
+		}
 		if ($this->connection === false) {
 			throw new Exception($sqliteerror);
 			return;
@@ -76,14 +80,14 @@ class SqliteTokenBackend implements TokenBackend {
 			return null;
 		}
 		if ($result = $this->connection->query(sprintf("SELECT user_id FROM users WHERE username = '%s' AND password = '%s' LIMIT 1;", sqlite_escape_string($token->username), sha1($token->password)))) {
-			if ($result->numRows() != 1) {
+			if ($result->rowCount() != 1) {
 				return null;
 			}
-			$user_id = $result->fetchSingle();
+			$user = $result->fetch(PDO::FETCH_ASSOC);
 			$token->valid_until = strtotime(sprintf("+%d second", $this->duration));
 			$token->hash = hash_hmac("sha1", sprintf("%s:%s", sqlite_escape_string($token->username), $token->password));
 
-			if (!$this->connection->queryExec(sprintf("INSERT INTO tokens (token_hash, token_valid_until, token_user_id) VALUES ('%s', '%s', %d);", $token->hash, $token->valid_until, $user_id))) {
+			if (!$this->connection->exec(sprintf("INSERT INTO tokens (token_hash, token_valid_until, token_user_id) VALUES ('%s', '%s', %d);", $token->hash, $token->valid_until, $user['user_id']))) {
 				return null;
 			} else {
 				return $token;
@@ -104,7 +108,7 @@ class SqliteTokenBackend implements TokenBackend {
 		if ($tokens === false) {
 			return null;
 		}
-		$t = $tokens->fetch(SQLITE_ASSOC);
+		$t = $tokens->fetch(PDO::FETCH_ASSOC);
 		if ($t === false) {
 			return null;
 		}
@@ -126,7 +130,7 @@ class SqliteTokenBackend implements TokenBackend {
 		$now = strtotime("now");
 		$then = strtotime($token->valid_until);
 		if (($now - $then) > 0) {
-			if (!$this->connection->queryExec(sprintf("UPDATE tokens SET valid_until = %d WHERE token_hash = '%s';", strtotime(sprintf("+%d second", $this->duration)), $token->token_hash))) {
+			if (!$this->connection->exec(sprintf("UPDATE tokens SET valid_until = %d WHERE token_hash = '%s';", strtotime(sprintf("+%d second", $this->duration)), $token->token_hash))) {
 				return false;
 			} else {
 				return true;
@@ -153,7 +157,7 @@ class SqliteTokenBackend implements TokenBackend {
 		if (strtotime("now") > $token->valid_until) {
 			return true;
 		} else {
-			$this->connection->queryExec(sprintf("DELETE FROM tokens WHERE token_hash = '%s';", sqlite_escape_string($token->hash)));
+			$this->connection->exec(sprintf("DELETE FROM tokens WHERE token_hash = '%s';", sqlite_escape_string($token->hash)));
 			return false;
 		}
 	}
@@ -171,7 +175,7 @@ class SqliteTokenBackend implements TokenBackend {
 		if (empty($token->username) || empty($token->valid_until) || empty($token->hash)) {
 			return false;
 		}
-		if (!$this->connection->queryExec(sprintf("DELETE FROM tokens WHERE token_hash = '%s';", sqlite_escape_string($token->hash)))) {
+		if (!$this->connection->exec(sprintf("DELETE FROM tokens WHERE token_hash = '%s';", sqlite_escape_string($token->hash)))) {
 			return false;
 		} else {
 			return true;
