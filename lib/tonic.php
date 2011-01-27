@@ -288,15 +288,19 @@ class Request {
         // get HTTP request data
         $this->data = $this->getConfig($config, 'data', NULL, file_get_contents("php://input"));
 
-        // get HTTP request type
+	// get HTTP request type
+	$raw_headers = null;
         if (function_exists("apache_request_headers")) {
-                $h = apache_request_headers();
-                foreach (apache_request_headers() as $k => $h) {
-                        if (strtolower($k) === "content-type") {
-                                $this->requestType = $h;
-                        }
-                }
-        }
+                $raw_headers = apache_request_headers();
+	} else if (function_exists("nsapi_request_headers")) {
+		$raw_headers = nsapi_request_headers();
+	}
+	foreach ($raw_headers as $k => $h) {
+		if (strtolower($k) === "content-type") {
+			$this->requestType = $h;
+			break;
+		}
+	}
 
         // get HTTP query string
         $this->queryString = $this->getConfig($config, NULL, 'QUERY_STRING');
