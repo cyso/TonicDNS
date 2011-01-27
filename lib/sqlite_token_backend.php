@@ -131,16 +131,7 @@ class SqliteTokenBackend implements TokenBackend {
 		if ($token == null) {
 			return false;
 		}
-		if (strtotime("now") < $token->valid_until) {
-			if (!$this->connection->exec(sprintf("UPDATE tokens SET token_valid_until = %d WHERE token_hash = '%s';", strtotime(sprintf("+%d second", $this->duration)), $token->hash))) {
-				return false;
-			} else {
-				return true;
-			}
-		} else {
-			$this->destroyToken($token);
-			return false;
-		}
+		return $this->validateToken($token, true);
 	}
 
 	/**
@@ -150,17 +141,25 @@ class SqliteTokenBackend implements TokenBackend {
 	 * @param mixed $token Token object.
 	 * @return boolean True if Token is still valid, false if it is not.
 	 */
-	public function validateToken($token) {
+	public function validateToken($token, $refresh = false) {
 		if (!($token instanceof Token)) {
 			return false;
 		}
 		if (empty($token->username) || empty($token->valid_until) || empty($token->hash)) {
 			return false;
 		}
-		if (strtotime("now") > $token->valid_until) {
-			return true;
+		if (strtotime("now") < $token->valid_until) {
+			if (!$refresh) {
+				return true;
+			} else {
+				if (!$this->connection->exec(sprintf("UPDATE tokens SET token_valid_until = %d WHERE token_hash = '%s';", strtotime(sprintf("+%d second", $this->duration)), $token->hash))) {
+					return false;
+				} else {
+					return true;
+				}
+			}
 		} else {
-			$this->connection->exec(sprintf("DELETE FROM tokens WHERE token_hash = '%s';", sqlite_escape_string($token->hash)));
+			$this->destroyToken($token);
 			return false;
 		}
 	}

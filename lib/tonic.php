@@ -295,7 +295,7 @@ class Request {
         $this->data = $this->getConfig($config, 'data', NULL, file_get_contents("php://input"));
 
         // get HTTP request type
-        $raw_headers = null;
+        $raw_headers = array();
         if (function_exists("apache_request_headers")) {
                 $raw_headers = apache_request_headers();
         } else if (function_exists("nsapi_request_headers")) {

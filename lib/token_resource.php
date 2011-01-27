@@ -48,7 +48,7 @@ class TokenResource extends Resource {
 			return $response;
 		}
 
-		$backend->refreshToken($token);
+		$backend->refreshToken($token->hash);
 
 		if (method_exists($this, $request->method)) {
 			$parameters = $this->parameters;
