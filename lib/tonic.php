@@ -95,6 +95,24 @@ class Request {
      * @var str
      */
     public $data;
+
+    /**
+     * Query string
+     * @var str
+     */
+    public $queryString;
+
+    /**
+     * Content-Type of the request
+     * @var str
+     */
+    public $requestType;
+
+    /**
+     * Authorization Token of the request
+     * @var str
+     */
+    public $requestToken;
     
     /**
      * Array of if-match etags
@@ -275,6 +293,27 @@ class Request {
         
         // get HTTP request data
         $this->data = $this->getConfig($config, 'data', NULL, file_get_contents("php://input"));
+
+        // get HTTP request type
+        $raw_headers = array();
+        if (function_exists("apache_request_headers")) {
+                $raw_headers = apache_request_headers();
+        } else if (function_exists("nsapi_request_headers")) {
+                $raw_headers = nsapi_request_headers();
+        }
+        foreach ($raw_headers as $k => $h) {
+                switch (strtolower($k)) {
+                case "content-type":
+                        $this->requestType = $h;
+                        break;
+                case "x-authentication-token":
+                        $this->requestToken = $h;
+                        break;
+                }
+        }
+
+        // get HTTP query string
+        $this->queryString = $this->getConfig($config, NULL, 'QUERY_STRING');
         
         // conditional requests
         if ($config['ifMatch']) {
@@ -469,7 +508,7 @@ class Request {
  */
 class Resource {
     
-    private $parameters = array();
+    protected $parameters = array();
     
     /**
      * Resource constructor
