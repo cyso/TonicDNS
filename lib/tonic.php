@@ -59,29 +59,28 @@ class Request {
      * @var str[]
      */
     public $mimetypes = array(
-            'html' => 'text/html',
-            'txt' => 'text/plain',
-            'php' => 'application/php',
-            'css' => 'text/css',
-            'js' => 'application/javascript',
-            'json' => 'application/json',
-            'xml' => 'text/xml',
-            'rss' => 'application/rss+xml',
-            'atom' => 'application/atom+xml',
-            'gz' => 'application/x-gzip',
-            'tar' => 'application/x-tar',
-            'zip' => 'application/zip',
-            'gif' => 'image/gif',
-            'png' => 'image/png',
-            'jpg' => 'image/jpeg',
-            'ico' => 'image/x-icon',
-            'swf' => 'application/x-shockwave-flash',
-            'flv' => 'video/x-flv',
-            'avi' => 'video/mpeg',
-            'mpeg' => 'video/mpeg',
-            'mpg' => 'video/mpeg',
-            'mov' => 'video/quicktime',
-            'mp3' => 'audio/mpeg'
+            'text/html' => 'html',
+            'text/plain' => 'txt',
+            'application/php' => 'php',
+            'text/css' => 'css',
+            'application/javascript' => 'js',
+            'application/json' => 'json',
+	    'text/xml' => 'xml',
+	    'application/xml' => 'xml',
+            'application/rss+xml' => 'rss',
+            'application/atom+xml' => 'atom',
+            'application/x-gzip' => 'gz',
+            'application/x-tar' => 'tar',
+            'application/zip' => 'zip',
+            'image/gif' => 'gif',
+            'image/png' => 'png',
+            'image/jpeg' => 'jpg',
+            'image/x-icon' => 'ico',
+            'application/x-shockwave-flash' => 'swf',
+            'video/x-flv' => 'flv',
+            'video/mpeg' => 'mpeg',
+            'video/quicktime' => 'mov',
+            'audio/mpeg' => 'mp3'
         );
         
     /**
@@ -194,8 +193,8 @@ class Request {
         $config['ifNoneMatch'] = $this->getConfig($config, 'ifNoneMatch', 'HTTP_IF_NONE_MATCH');
         
         if (isset($config['mimetypes']) && is_array($config['mimetypes'])) {
-            foreach ($config['mimetypes'] as $ext => $mimetype) {
-                $this->mimetypes[$ext] = $mimetype;
+            foreach ($config['mimetypes'] as $mimetype => $ext) {
+                $this->mimetypes[$mimetype] = $ext;
             }
         }
         
@@ -229,9 +228,8 @@ class Request {
             } else {
                 $num = 10;
             }
-            $key = array_search($parts[0], $this->mimetypes);
-            if ($key) {
-                $this->accept[$num][] = $key;
+            if (array_key_exists($parts[0], $this->mimetypes)) {
+                $this->accept[$num][] = $this->mimetypes[$parts[0]];
             }
         }
         krsort($this->accept);
