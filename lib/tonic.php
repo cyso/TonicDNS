@@ -506,7 +506,61 @@ class Request {
         }
         return in_array($etag, $this->ifNoneMatch);
     }
-    
+
+    /**
+     * Returns a parsed version of the request data.
+     * @return mixed Parsed data, or null on error.
+     */
+    function parseData() {
+        $type = null;
+        if (isset($this->requestType)) {
+            preg_match("/^([\w]+\/[\w]+)(?:;.*)?$/", $this->requestType, $r);
+            if (is_array($r)) {
+                $this->requestType = $r[1];
+            }
+            switch($this->requestType) {
+            case "application/xml":
+            case "text/xml":
+                $type = "xml";
+                break;
+            case "application/json":
+            case "text/json":
+                $type = "json";
+                break;
+            default:
+                $type = null;
+                break;
+            }
+        } else {
+            if (preg_match("/<([a-z_:][a-z]*(\s+[a-z_:][a-z]*\s*=\s*(\"[^\"]*\"|'[^']*'))*|/[a-z_:][a-z]*)\s*>/", $this->data)) {
+                $type = "xml";
+            } else if (preg_match("/^(\s|[,:{}\[\]]|\"(\\[\"\\bfnrtu]|[^\x00-\x1f\"\\])*\"|-?\d+(\.\d*)?([eE][+-]?\d+)?|true|false|null)+$/", $this->data)) {
+                $type = "json";
+            } else {
+                $type = null;
+            }
+        }
+
+        if ($type == null) {
+                return null;
+        }
+
+        $data = null;
+        switch ($type) {
+        case "xml":
+                $data = simplexml_load_string($this->data);
+                break;
+        case "json":
+                $data = json_decode($this->data);
+                break;
+        }
+
+        if (!is_object($data)) {
+                return null;
+        } else {
+                return $data;
+        }
+    }
 }
 
 /**
@@ -650,7 +704,7 @@ class Response {
      * The request object generating this response
      * @var Request
      */
-    private $request;
+    protected $request;
     
     /**
      * The HTTP response code to send
