@@ -66,8 +66,8 @@ class FilesystemResource extends Resource {
                 } else {
                     
                     $extension = array_pop(explode('.', $filePath));
-                    if (isset($request->mimetypes[$extension])) { // add content type header
-                        $response->addHeader('Content-Type', $request->mimetypes[$extension]);
+                    if (($key = array_search($extension, $request->mimetypes)) !== false) { // add content type header
+                        $response->addHeader('Content-Type', $request->mimetypes[$key]);
                     }
                     
                     $response->addEtag($etag); // add etag header
@@ -84,7 +84,7 @@ class FilesystemResource extends Resource {
         // nothing found, send 404 response
         $response = new Response($request);
         $response->code = Response::NOTFOUND;
-        $response->addHeader('Content-Type', $request->mimetypes['html']);
+        $response->addHeader('Content-Type', 'text/html');
         $response->body = '<p>404, nothing found</p>';
         return $response;
         

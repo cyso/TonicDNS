@@ -43,6 +43,7 @@ class FormattedResponse extends Response {
 
 		switch ($type) {
 		case "json":
+		default:
 			$this->body = json_encode($this->body);
 			break;
 		case "xml":
