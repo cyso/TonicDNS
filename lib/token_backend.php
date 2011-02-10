@@ -95,9 +95,9 @@ class Token {
 	public function toArray() {
 		return array (
 			"username" => $this->username,
-			"valid_until" => $valid_until,
-			"hash" => $hash,
-			"token" => $hash
+			"valid_until" => $this->valid_until,
+			"hash" => $this->hash,
+			"token" => $this->hash
 		);
 	}
 }
