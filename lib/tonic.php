@@ -59,29 +59,28 @@ class Request {
      * @var str[]
      */
     public $mimetypes = array(
-            'html' => 'text/html',
-            'txt' => 'text/plain',
-            'php' => 'application/php',
-            'css' => 'text/css',
-            'js' => 'application/javascript',
-            'json' => 'application/json',
-            'xml' => 'text/xml',
-            'rss' => 'application/rss+xml',
-            'atom' => 'application/atom+xml',
-            'gz' => 'application/x-gzip',
-            'tar' => 'application/x-tar',
-            'zip' => 'application/zip',
-            'gif' => 'image/gif',
-            'png' => 'image/png',
-            'jpg' => 'image/jpeg',
-            'ico' => 'image/x-icon',
-            'swf' => 'application/x-shockwave-flash',
-            'flv' => 'video/x-flv',
-            'avi' => 'video/mpeg',
-            'mpeg' => 'video/mpeg',
-            'mpg' => 'video/mpeg',
-            'mov' => 'video/quicktime',
-            'mp3' => 'audio/mpeg'
+            'text/html' => 'html',
+            'text/plain' => 'txt',
+            'application/php' => 'php',
+            'text/css' => 'css',
+            'application/javascript' => 'js',
+            'application/json' => 'json',
+	    'text/xml' => 'xml',
+	    'application/xml' => 'xml',
+            'application/rss+xml' => 'rss',
+            'application/atom+xml' => 'atom',
+            'application/x-gzip' => 'gz',
+            'application/x-tar' => 'tar',
+            'application/zip' => 'zip',
+            'image/gif' => 'gif',
+            'image/png' => 'png',
+            'image/jpeg' => 'jpg',
+            'image/x-icon' => 'ico',
+            'application/x-shockwave-flash' => 'swf',
+            'video/x-flv' => 'flv',
+            'video/mpeg' => 'mpeg',
+            'video/quicktime' => 'mov',
+            'audio/mpeg' => 'mp3'
         );
         
     /**
@@ -194,8 +193,8 @@ class Request {
         $config['ifNoneMatch'] = $this->getConfig($config, 'ifNoneMatch', 'HTTP_IF_NONE_MATCH');
         
         if (isset($config['mimetypes']) && is_array($config['mimetypes'])) {
-            foreach ($config['mimetypes'] as $ext => $mimetype) {
-                $this->mimetypes[$ext] = $mimetype;
+            foreach ($config['mimetypes'] as $mimetype => $ext) {
+                $this->mimetypes[$mimetype] = $ext;
             }
         }
         
@@ -229,9 +228,8 @@ class Request {
             } else {
                 $num = 10;
             }
-            $key = array_search($parts[0], $this->mimetypes);
-            if ($key) {
-                $this->accept[$num][] = $key;
+            if (array_key_exists($parts[0], $this->mimetypes)) {
+                $this->accept[$num][] = $this->mimetypes[$parts[0]];
             }
         }
         krsort($this->accept);
@@ -499,7 +497,61 @@ class Request {
         }
         return in_array($etag, $this->ifNoneMatch);
     }
-    
+
+    /**
+     * Returns a parsed version of the request data.
+     * @return mixed Parsed data, or null on error.
+     */
+    function parseData() {
+        $type = null;
+        if (isset($this->requestType)) {
+            preg_match("/^([\w]+\/[\w]+)(?:;.*)?$/", $this->requestType, $r);
+            if (is_array($r)) {
+                $this->requestType = $r[1];
+            }
+            switch($this->requestType) {
+            case "application/xml":
+            case "text/xml":
+                $type = "xml";
+                break;
+            case "application/json":
+            case "text/json":
+                $type = "json";
+                break;
+            default:
+                $type = null;
+                break;
+            }
+        } else {
+            if (preg_match("/<([a-z_:][a-z]*(\s+[a-z_:][a-z]*\s*=\s*(\"[^\"]*\"|'[^']*'))*|/[a-z_:][a-z]*)\s*>/", $this->data)) {
+                $type = "xml";
+            } else if (preg_match("/^(\s|[,:{}\[\]]|\"(\\[\"\\bfnrtu]|[^\x00-\x1f\"\\])*\"|-?\d+(\.\d*)?([eE][+-]?\d+)?|true|false|null)+$/", $this->data)) {
+                $type = "json";
+            } else {
+                $type = null;
+            }
+        }
+
+        if ($type == null) {
+                return null;
+        }
+
+        $data = null;
+        switch ($type) {
+        case "xml":
+                $data = simplexml_load_string($this->data);
+                break;
+        case "json":
+                $data = json_decode($this->data);
+                break;
+        }
+
+        if (!is_object($data)) {
+                return null;
+        } else {
+                return $data;
+        }
+    }
 }
 
 /**
@@ -628,7 +680,7 @@ class Response {
      * The request object generating this response
      * @var Request
      */
-    private $request;
+    protected $request;
     
     /**
      * The HTTP response code to send

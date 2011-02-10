@@ -18,36 +18,35 @@ class AuthenticationResource extends Resource {
 	 * @return Response Authentication Token if successful, error message if false.
 	 */
 	public function put($request) {
-		$response = new Response($request);
-		$body = $request->data;
-		$json = json_decode($body);
+		$response = new FormattedResponse($request);
+		$data = $request->parseData();
 
-		if ($json == null) {
+		if ($data == null) {
 			$response->code = Response::BADREQUEST;
-			$response->body = json_encode("Request body was malformed. Ensure the body is in valid JSON format.");
+			$response->body = "Request body was malformed. Ensure the body is in valid format.";
 			return $response;
 		}
 
-		if (!isset($json->username) || !isset($json->password)) {
+		if (!isset($data->username) || !isset($data->password)) {
 			$response->code = Response::BADREQUEST;
-			$response->body = json_encode("Username and/or password was missing or invalid. Ensure that the body is in valid JSON format and all required parameters are present.");
+			$response->body = "Username and/or password was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
 			return $response;
 		}
 
 		$token = new Token();
-		$token->username = $json->username;
-		$token->password = $json->password;
+		$token->username = $data->username;
+		$token->password = $data->password;
 
 		$backend = new SqliteTokenBackend();
 		$token = $backend->createToken($token);
 
 		if ($token == null) {
 			$response->code = Response::FORBIDDEN;
-			$response->body = json_encode("Username and/or password was invalid.");
+			$response->body = "Username and/or password was invalid.";
 			return $response;
 		}
 
-		$response->body = json_encode($token);
+		$response->body = $token->toArray();
 
 		return $response;
 	}
@@ -65,32 +64,31 @@ class AuthenticationResource extends Resource {
 	 * @return Response True if session is still valid, false otherwise.
 	 */
 	public function post($request) {
-		$response = new Response($request);
-		$body = $request->data;
-		$json = json_decode($body);
+		$response = new FormattedResponse($request);
+		$data = $request->parseData();
 
-		if ($json == null) {
+		if ($data == null) {
 			$response->code = Response::BADREQUEST;
-			$response->body = json_encode("Request body was malformed. Ensure the body is in valid JSON format.");
+			$response->body = "Request body was malformed. Ensure the body is in valid format.";
 			return $response;
 		}
 
-		if (!isset($json->token)) {
+		if (!isset($data->token)) {
 			$response->code = Response::BADREQUEST;
-			$response->body = json_encode("Token was missing or invalid. Ensure that the body is in valid JSON format and all required parameters are present.");
+			$response->body = "Token was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
 			return $response;
 		}
 
 		$backend = new SqliteTokenBackend();
-		$token = $backend->refreshToken($json->token);
+		$token = $backend->refreshToken($data->token);
 
 		if ($token == null) {
 			$response->code = Response::FORBIDDEN;
-			$response->body = json_encode("Token was invalid.");
+			$response->body = "Token was invalid.";
 			return $response;
 		}
 
-		$response->body = json_encode(true);
+		$response->body = true;
 
 		return $response;
 	}
@@ -107,38 +105,37 @@ class AuthenticationResource extends Resource {
 	 * @return Response True if session was terminated, false otherwise.
 	 */
 	public function delete($request) {
-		$response = new Response($request);
-		$body = $request->data;
-		$json = json_decode($body);
+		$response = new FormattedResponse($request);
+		$data = $request->parseData();
 
-		if ($json == null) {
+		if ($data == null) {
 			$response->code = Response::BADREQUEST;
-			$response->body = json_encode("Request body was malformed. Ensure the body is in valid JSON format.");
+			$response->body = "Request body was malformed. Ensure the body is in valid format.";
 			return $response;
 		}
 
-		if (!isset($json->token)) {
+		if (!isset($data->token)) {
 			$response->code = Response::BADREQUEST;
-			$response->body = json_encode("Token was missing or invalid. Ensure that the body is in valid JSON format and all required parameters are present.");
+			$response->body = "Token was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
 			return $response;
 		}
 
 		$backend = new SqliteTokenBackend();
-		$token = $backend->retrieveToken($json->token);
+		$token = $backend->retrieveToken($data->token);
 
 		if ($token == null) {
 			$response->code = Response::FORBIDDEN;
-			$response->body = json_encode("Token was invalid.");
+			$response->body = "Token was invalid.";
 			return $response;
 		}
 
 		if (!$backend->destroyToken($token)) {
 			$response->code = Response::INTERNALSERVERERROR;
-			$response->body = json_encode("Token could not be destroyed.");
+			$response->body = "Token could not be destroyed.";
 			return $response;
 		}
 
-		$response->body = json_encode(true);
+		$response->body = true;
 
 		return $response;
 	}
