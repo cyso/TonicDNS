@@ -478,6 +478,44 @@ class RequestTester extends UnitTestCase {
         
     }
     
+    function testURITemplateStyleUriParameters() {
+        
+        $config = array(
+            'uri' => '/requesttest/uritemplatestyle/woo/yay'
+        );
+        
+        $request = new Request($config);
+        $resource = $request->loadResource();
+        
+        $this->assertEqual(get_class($resource), 'TwoUriParams');
+        $this->assertPattern('/param: woo/', $resource);
+        $this->assertPattern('/param2: yay/', $resource);
+        
+        $resource->exec($request);
+        $this->assertEqual($resource->receivedParams['param'], 'woo');
+        $this->assertEqual($resource->receivedParams['param2'], 'yay');
+        
+        
+        $config = array(
+            'uri' => '/requesttest/uritemplatemixedstyle/woo/yay/foo/bar'
+        );
+        
+        $request = new Request($config);
+        $resource = $request->loadResource();
+        
+        $this->assertEqual(get_class($resource), 'FourUriParams');
+        $this->assertPattern('/param: woo/', $resource);
+        $this->assertPattern('/1: yay/', $resource);
+        $this->assertPattern('/param2: foo/', $resource);
+        $this->assertPattern('/3: bar/', $resource);
+        
+        $resource->exec($request);
+        $this->assertEqual($resource->receivedParams['param'], 'woo');
+        $this->assertEqual($resource->receivedParams['something'], 'yay');
+        $this->assertEqual($resource->receivedParams['param2'], 'foo');
+        $this->assertEqual($resource->receivedParams['otherthing'], 'bar');
+    }
+    
     function testRailsStyleUriParameters() {
         
         $config = array(
@@ -487,12 +525,36 @@ class RequestTester extends UnitTestCase {
         $request = new Request($config);
         $resource = $request->loadResource();
         
-        $this->assertEqual(get_class($resource), 'RailsStyleUriParam');
-        $this->assertPattern('/0: woo/', $resource);
+        $this->assertEqual(get_class($resource), 'TwoUriParams');
         $this->assertPattern('/param: woo/', $resource);
-        $this->assertPattern('/1: yay/', $resource);
         $this->assertPattern('/param2: yay/', $resource);
         
+        $resource->exec($request);
+        $this->assertEqual($resource->receivedParams['param'], 'woo');
+        $this->assertEqual($resource->receivedParams['param2'], 'yay');
+        
+        
+        $config = array(
+            'uri' => '/requesttest/railsmixedstyle/woo/yay/foo/bar'
+        );
+        
+        $request = new Request($config);
+        $resource = $request->loadResource();
+        
+        $this->assertEqual(get_class($resource), 'FourUriParams');
+        $this->assertPattern('/param: woo/', $resource);
+        $this->assertPattern('/1: yay/', $resource);
+        $this->assertPattern('/param2: foo/', $resource);
+        $this->assertPattern('/3: bar/', $resource);
+        
+        $resource->exec($request);
+        $this->assertEqual($resource->receivedParams['param'], 'woo');
+        $this->assertEqual($resource->receivedParams['something'], 'yay');
+        $this->assertEqual($resource->receivedParams['param2'], 'foo');
+        $this->assertEqual($resource->receivedParams['otherthing'], 'bar');
+    }
+    
+    function testMixedStyleUriParameters() {
         
         $config = array(
             'uri' => '/requesttest/mixedstyle/woo/yay/foo/bar'
@@ -501,13 +563,17 @@ class RequestTester extends UnitTestCase {
         $request = new Request($config);
         $resource = $request->loadResource();
         
-        $this->assertEqual(get_class($resource), 'MixedRegexAndRailsStyleUriParam');
-        $this->assertPattern('/0: woo/', $resource);
+        $this->assertEqual(get_class($resource), 'FourUriParams');
         $this->assertPattern('/param: woo/', $resource);
         $this->assertPattern('/1: yay/', $resource);
-        $this->assertPattern('/2: foo/', $resource);
         $this->assertPattern('/param2: foo/', $resource);
         $this->assertPattern('/3: bar/', $resource);
+        
+        $resource->exec($request);
+        $this->assertEqual($resource->receivedParams['param'], 'woo');
+        $this->assertEqual($resource->receivedParams['something'], 'yay');
+        $this->assertEqual($resource->receivedParams['param2'], 'foo');
+        $this->assertEqual($resource->receivedParams['otherthing'], 'bar');
     }
     
 }
@@ -542,16 +608,41 @@ class NewNoResource extends NoResource {
 /**
  * @namespace Tonic\Tests
  * @uri /requesttest/railsstyle/:param/:param2
+ * @uri /requesttest/uritemplatestyle/{param}/{param2}
  */
-class RailsStyleUriParam extends Resource {
+class TwoUriParams extends Resource {
 
+    var $params;
+    
+    function get($request, $param, $param2) {
+        $this->receivedParams = array(
+            'param' => $param,
+            'param2' => $param2
+        );
+        return new Response($request);
+    }
+    
 }
 
 /**
  * @namespace Tonic\Tests
- * @uri /requesttest/mixedstyle/:param/(.+)/:param2/(.+)
+ * @uri /requesttest/railsmixedstyle/{param}/(.+)/{param2}/(.+)
+ * @uri /requesttest/uritemplatemixedstyle/{param}/(.+)/{param2}/(.+)
+ * @uri /requesttest/mixedstyle/:param/(.+)/{param2}/(.+)
  */
-class MixedRegexAndRailsStyleUriParam extends Resource {
-
+class FourUriParams extends Resource {
+    
+    var $params;
+    
+    function get($request, $something, $otherthing, $param, $param2) {
+        $this->receivedParams = array(
+            'param' => $param,
+            'param2' => $param2,
+            'something' => $something,
+            'otherthing' => $otherthing
+        );
+        return new Response($request);
+    }
+    
 }
 
