@@ -19,5 +19,11 @@ class PowerDnsConfig {
 	const DB_ZONE_TABLE = "";
 	const DB_RECORD_TABLE = "";
 	const DB_USER_TABLE = "";
+
+	/**
+	 * Default DNS settings
+	 */
+	const DNS_DEFAULT_RECORD_TTL = 86400;
+	const DNS_DEFAULT_RECORD_PRIORITY = 0;
 }
 ?>

@@ -535,9 +535,9 @@ class Request {
                 break;
             }
         } else {
-            if (preg_match("/<([a-z_:][a-z]*(\s+[a-z_:][a-z]*\s*=\s*(\"[^\"]*\"|'[^']*'))*|/[a-z_:][a-z]*)\s*>/", $this->data)) {
+            if (preg_match("#<([a-z_:][a-z]*(\s+[a-z_:][a-z]*\s*=\s*(\"[^\"]*\"|'[^']*'))*|/[a-z_:][a-z]*)\s*>#", $this->data)) {
                 $type = "xml";
-            } else if (preg_match("/^(\s|[,:{}\[\]]|\"(\\[\"\\bfnrtu]|[^\x00-\x1f\"\\])*\"|-?\d+(\.\d*)?([eE][+-]?\d+)?|true|false|null)+$/", $this->data)) {
+            } else if (preg_match("#^(\"(\.|[^\"\\\n\r])*?\"|[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t])+?$#", $this->data)) {
                 $type = "json";
             } else {
                 $type = null;
