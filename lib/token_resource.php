@@ -10,10 +10,11 @@ class TokenResource extends Resource {
 	 * @return Response
 	 */
 	function exec($request) {
+		$response = new FormattedResponse($request);
+
 		if (!isset($request->requestToken) || empty($request->requestToken)) {
-			$response = new Response($request);
 			$response->code = Response::UNAUTHORIZED;
-			$response->body = json_encode("Authorization required");
+			$response->error = "Authorization required";
 			$response->addHeader('X-Debug', "No token supplied");
 
 			return $response;
@@ -22,27 +23,24 @@ class TokenResource extends Resource {
 		try {
 			$backend = new SqliteTokenBackend();
 		} catch (Exception $e) {
-			$response = new Response($request);
 			$response->code = Response::INTERNALSERVERERROR;
-			$response->body = json_encode(array("exception" => $e->getMessage()));
+			$response->error = $e->getMessage();
 			return $response;
 		}
 
 		$token = $backend->retrieveToken($request->requestToken);
 
 		if ($token == null) {
-			$response = new Response($request);
 			$response->code = Response::FORBIDDEN;
-			$response->body = "Authentication failed";
+			$response->error = "Authentication failed";
 			$response->addHeader('X-Debug', "Token is null");
 
 			return $response;
 		}
 
 		if ($backend->validateToken($token) === false) {
-			$response = new Response($request);
 			$response->code = Response::FORBIDDEN;
-			$response->body = "Authentication failed";
+			$response->error = "Authentication failed";
 			$response->addHeader('X-Debug', "Token is invalid");
 
 			return $response;
@@ -60,16 +58,14 @@ class TokenResource extends Resource {
 					$parameters
 				);
 			} catch (Exception $e) {
-				$response = new Response($request);
 				$response->code = Response::INTERNALSERVERERROR;
-				$response->body = $e;
+				$response->error = $e;
 				return $response;
 			}
 		} else {
 			// send 405 method not allowed
-			$response = new Response($request);
 			$response->code = Response::METHODNOTALLOWED;
-			$response->body = sprintf(
+			$response->error = sprintf(
 				'The HTTP method "%s" used for the request is not allowed for the resource "%s".',
 				$request->method,
 				$request->uri

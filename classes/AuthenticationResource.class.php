@@ -23,13 +23,13 @@ class AuthenticationResource extends Resource {
 
 		if ($data == null) {
 			$response->code = Response::BADREQUEST;
-			$response->body = "Request body was malformed. Ensure the body is in valid format.";
+			$response->error = "Request body was malformed. Ensure the body is in valid format.";
 			return $response;
 		}
 
 		if (!isset($data->username) || !isset($data->password)) {
 			$response->code = Response::BADREQUEST;
-			$response->body = "Username and/or password was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error = "Username and/or password was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
 			return $response;
 		}
 
@@ -42,7 +42,7 @@ class AuthenticationResource extends Resource {
 
 		if ($token == null) {
 			$response->code = Response::FORBIDDEN;
-			$response->body = "Username and/or password was invalid.";
+			$response->error = "Username and/or password was invalid.";
 			return $response;
 		}
 
@@ -69,13 +69,13 @@ class AuthenticationResource extends Resource {
 
 		if ($data == null) {
 			$response->code = Response::BADREQUEST;
-			$response->body = "Request body was malformed. Ensure the body is in valid format.";
+			$response->error = "Request body was malformed. Ensure the body is in valid format.";
 			return $response;
 		}
 
 		if (!isset($data->token)) {
 			$response->code = Response::BADREQUEST;
-			$response->body = "Token was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error = "Token was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
 			return $response;
 		}
 
@@ -84,7 +84,7 @@ class AuthenticationResource extends Resource {
 
 		if ($token == null) {
 			$response->code = Response::FORBIDDEN;
-			$response->body = "Token was invalid.";
+			$response->error = "Token was invalid.";
 			return $response;
 		}
 
@@ -110,13 +110,13 @@ class AuthenticationResource extends Resource {
 
 		if ($data == null) {
 			$response->code = Response::BADREQUEST;
-			$response->body = "Request body was malformed. Ensure the body is in valid format.";
+			$response->error = "Request body was malformed. Ensure the body is in valid format.";
 			return $response;
 		}
 
 		if (!isset($data->token)) {
 			$response->code = Response::BADREQUEST;
-			$response->body = "Token was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error = "Token was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
 			return $response;
 		}
 
@@ -125,13 +125,13 @@ class AuthenticationResource extends Resource {
 
 		if ($token == null) {
 			$response->code = Response::FORBIDDEN;
-			$response->body = "Token was invalid.";
+			$response->body = array("error" => "Token was invalid.");
 			return $response;
 		}
 
 		if (!$backend->destroyToken($token)) {
 			$response->code = Response::INTERNALSERVERERROR;
-			$response->body = "Token could not be destroyed.";
+			$response->body = array("error" => "Token could not be destroyed.");
 			return $response;
 		}
 

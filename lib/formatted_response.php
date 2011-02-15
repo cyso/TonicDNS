@@ -4,6 +4,16 @@
  * @namespace Tonic\Lib
  */
 class FormattedResponse extends Response {
+
+	/**
+	 * If set, will replace the normal body with:
+	 * {
+	 * 	"error": <string>
+	 * }
+	 * @var string
+	 */
+	public $error = null;
+
 	/**
 	 * Convert the object into a string suitable for printing
 	 * @return str
@@ -40,6 +50,11 @@ class FormattedResponse extends Response {
 				}
 			}
 		}
+
+		if ($this->error != null) {
+			$this->body = array("error" => $this->error);
+		}
+
 
 		switch ($type) {
 		case "json":

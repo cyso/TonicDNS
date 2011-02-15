@@ -510,6 +510,11 @@ class Request {
      * @return mixed Parsed data, or null on error.
      */
     function parseData() {
+        if ($this->method === "GET") {
+            parse_str($this->queryString, $data);
+            return $data;
+	}
+
         $type = null;
         if (isset($this->requestType)) {
             preg_match("/^([\w]+\/[\w]+)(?:;.*)?$/", $this->requestType, $r);
