@@ -66,7 +66,14 @@ class FormattedResponse extends Response {
 
 			if (is_array($this->body)) {
 				foreach ($this->body as $k => $v) {
-					$xmlnode->addValue($k, $v);
+					if (is_array($v)) {
+						$n = new XMLNode($k);
+						$n->addArray($v);
+						$xmlnode->addValue(null, $n);
+					} else {
+						$xmlnode->addValue($k, $v);
+					}
+
 				}
 			} else {
 				if (is_object($this->body) && method_exists($this->body, "__toString")) {
@@ -105,6 +112,21 @@ class XMLNode {
 		$this->values[] = array("name" => $name, "value" => $value);
 	}
 
+	public function addArray($value) {
+		foreach ($value as $k => $v) {
+			if (is_int($k)) {
+				$k = "item";
+			}
+			if (is_array($v)) {
+				$node = new XMLNode($k);
+				$node->addArray($v);
+				$this->addValue(null, $node);
+			} else {
+				$this->addValue($k, $v);
+			}
+		}
+	}
+
 	public function generate() {
 		if (!$this->mainBody) {
 			$xml = "<{$this->parameter_name}";
@@ -129,7 +151,7 @@ class XMLNode {
 
 				foreach ($gen as &$g) {
 					if (!empty($g)) {
-						$g = "\n\t" . $g;
+						$g = "\t" . $g;
 					}
 				}
 
