@@ -3,6 +3,12 @@
 // load Tonic library
 require_once '../lib/tonic.php';
 
+// load all config files
+$configs = glob("../conf/*.php");
+foreach ($configs as $config) {
+	require_once $config;
+}
+
 // load all other libraries
 $libraries = glob("../lib/*.php");
 foreach ($libraries as $library) {

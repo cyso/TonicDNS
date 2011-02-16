@@ -1,0 +1,29 @@
+<?php
+
+class PowerDnsConfig {
+	/**
+	 * DSN of the PowerDNS master database
+	 */
+	const DB_DSN = "";
+	/**
+	 * Credentials for database user
+	 */
+	const DB_USER = "";
+	const DB_PASS = "";
+
+	/**
+	 * Relevant table names
+	 */
+	const DB_TEMPLATE_TABLE = "";
+	const DB_TEMPLATE_RECORDS_TABLE = "";
+	const DB_ZONE_TABLE = "";
+	const DB_RECORD_TABLE = "";
+	const DB_USER_TABLE = "";
+
+	/**
+	 * Default DNS settings
+	 */
+	const DNS_DEFAULT_RECORD_TTL = 86400;
+	const DNS_DEFAULT_RECORD_PRIORITY = 0;
+}
+?>
