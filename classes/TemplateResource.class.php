@@ -79,7 +79,7 @@ class TemplateResource extends TokenResource {
 	 * @param mixed $request Request parameters
 	 * @return Response True if request was successful, false with error message otherwise.
 	 */
-	public function post($request) {
+	public function post($request, $identifier = null) {
 		$response = new FormattedResponse($request);
 		$data = $request->parseData();
 
@@ -89,7 +89,7 @@ class TemplateResource extends TokenResource {
 			return $response;
 		}
 
-		if (!isset($data->identifier) || !isset($data->entries) || empty($data->entries)) {
+		if (empty($identifier) || !isset($data->identifier) || !isset($data->entries) || empty($data->entries)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
 			return $response;
@@ -328,11 +328,12 @@ class TemplateResource extends TokenResource {
 
 		$connection->beginTransaction();
 
-		$delete = $connection->prepare(sprintf("DELETE FROM `%s` z WHERE z.name = :name;", PowerDNSConfig::DB_TEMPLATE_TABLE));
+		$delete = $connection->prepare(sprintf("DELETE FROM `%s` WHERE %s.name = :name;", PowerDNSConfig::DB_TEMPLATE_TABLE, PowerDNSConfig::DB_TEMPLATE_TABLE));
 
 		if ($delete->execute(array(":name" => $identifier)) === false) {
+			var_dump($delete);
 			$response->code = Response::INTERNALSERVERERROR;
-			$response->error = "Rolling back transaction, failed to insert template.";
+			$response->error = "Rolling back transaction, failed to delete template.";
 
 			$connection->rollback();
 			$out = false;
