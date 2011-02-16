@@ -67,8 +67,11 @@ class TemplateResource extends TokenResource {
 	 * {
 	 * 	"identifier": <string>,
 	 * 	"entries": 0..n {
+	 * 		"name": <string>,
 	 * 		"type": <string>,
-	 * 		"value": <string>
+	 * 		"content": <string>,
+	 * 		"ttl": <int>,
+	 * 		"priority": <int>
 	 * 	}
 	 * }
 	 *
@@ -92,7 +95,7 @@ class TemplateResource extends TokenResource {
 			return $response;
 		}
 
-		return $response;
+		return $this->modify_template($response, $data);
 	}
 
 	/**
@@ -218,12 +221,13 @@ class TemplateResource extends TokenResource {
 		return $response;
 	}
 
-	private function create_template($response, $data) {
+	private function create_template($response, $data, &$out = null) {
 		$response = $this->get_template($response, $data->identifier, $out);
 
 		if (!empty($out)) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Resource already exists";
+			$out = false;
 			return $response;
 		}
 
@@ -234,6 +238,7 @@ class TemplateResource extends TokenResource {
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
+			$out = false;
 			return $response;
 		}
 
@@ -246,6 +251,7 @@ class TemplateResource extends TokenResource {
 			$response->error = "Rolling back transaction, failed to insert template.";
 
 			$connection->rollback();
+			$out = false;
 
 			return $response;
 		}
@@ -282,6 +288,7 @@ class TemplateResource extends TokenResource {
 				$response->error = sprintf("Rolling back transaction, failed to insert template record - name: '%s', type: '%s', content: '%s', ttl: '%s', prio: '%s'", $r_name, $r_type, $r_content, $r_ttl, $r_prio);
 
 				$connection->rollback();
+				$out = false;
 
 				return $response;
 			}
@@ -290,9 +297,21 @@ class TemplateResource extends TokenResource {
 		$connection->commit();
 
 		$response->body = true;
+		$out = true;
 
 		return $response;
 	}
+
+	private function modify_template($response, $data, &$out = null) {
+		$response = $this->delete_template($response, $data->identifier, $out);
+
+		if ($out === false) {
+			return $response;
+		}
+
+		return $this->create_template($response, $data, $out);
+	}
+
 
 	private function delete_template($response, $identifier, &$out = null) {
 		$response = $this->get_template($response, $identifier, $out);
