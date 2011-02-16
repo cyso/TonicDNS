@@ -101,25 +101,15 @@ class TemplateResource extends TokenResource {
 	/**
 	 * Delete an existing DNS template.
 	 *
-	 * {
-	 * 	"identifier": <string>
-	 * }
-	 *
 	 * @access public
 	 * @params mixed $request Request parameters
 	 * @return Response True if template was deleted, false with error message otherwise.
 	 */
-	public function delete($request) {
+	public function delete($request, $identifier = null) {
 		$response = new FormattedResponse($request);
 		$data = $request->parseData();
 
-		if ($data == null) {
-			$response->code = Response::BADREQUEST;
-			$response->error = "Request body was malformed. Ensure the body is in valid format.";
-			return $response;
-		}
-
-		if (!isset($data->identifier)) {
+		if (empty($identifier)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
 			return $response;
