@@ -130,7 +130,41 @@ class ZoneResource extends TokenResource {
 	}
 
 	private function get_all_zones($response, &$out = null) {
+		try {
+			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+		} catch (PDOException $e) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not connect to PowerDNS server.";
+			return $response;
+		}
 
+		$result = $connection->query(sprintf(
+			"SELECT z.id as z_id, z.name as z_name, z.master as z_master, z.last_check as z_last_check, z.type as z_type, z.notified_serial as z_notified_serial
+			 FROM `%s` z
+			 ORDER BY z_name ASC;", PowerDNSConfig::DB_ZONE_TABLE)
+		);
+
+		if ($result === false) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not query PowerDNS server.";
+			return $response;
+		}
+
+		$output = array();
+		while (($row = $result->fetch(PDO::FETCH_ASSOC)) !== false ) {
+			$zone = array();
+			$zone['name'] = $row['z_name'];
+			$zone['type'] = $row['z_type'];
+			if (!empty($row['z_master'])) { $zone['master'] = $row['z_master']; }
+			if (!empty($row['z_last_check'])) { $zone['last_check'] = $row['z_last_check']; }
+			if (!empty($row['z_notified_serial'])) { $zone['notified_serial'] = $row['z_notified_serial']; }
+
+			$output[] = $zone;
+		}
+
+		$response->body = $output;
+		$out = $output;
+		return $response;
 	}
 
 	private function get_zone($response, $identifier, &$out = null) {
