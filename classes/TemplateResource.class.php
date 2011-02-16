@@ -122,7 +122,7 @@ class TemplateResource extends TokenResource {
 			return $response;
 		}
 
-		return $response;
+		return $this->delete_template($response, $identifier);
 	}
 
 	private function get_all_templates($response, &$out = null) {
@@ -290,6 +290,51 @@ class TemplateResource extends TokenResource {
 		$connection->commit();
 
 		$response->body = true;
+
+		return $response;
+	}
+
+	private function delete_template($response, $identifier, &$out = null) {
+		$response = $this->get_template($response, $identifier, $out);
+
+		if (empty($out)) {
+			$response->code = Response::NOTFOUND;
+			$response->error = "Resource does not exist";
+			$out = false;
+
+			return $response;
+		}
+
+		unset($out);
+
+		try {
+			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+		} catch (PDOException $e) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not connect to PowerDNS server.";
+			$out = false;
+
+			return $response;
+		}
+
+		$connection->beginTransaction();
+
+		$delete = $connection->prepare(sprintf("DELETE FROM `%s` z WHERE z.name = :name;", PowerDNSConfig::DB_TEMPLATE_TABLE));
+
+		if ($delete->execute(array(":name" => $identifier)) === false) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Rolling back transaction, failed to insert template.";
+
+			$connection->rollback();
+			$out = false;
+
+			return $response;
+		}
+
+		$connection->commit();
+
+		$response->body = true;
+		$out = true;
 
 		return $response;
 	}
