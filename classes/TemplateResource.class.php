@@ -140,12 +140,12 @@ class TemplateResource extends TokenResource {
 
 		$output = array();
 		while (($row = $result->fetch(PDO::FETCH_ASSOC)) !== false ) {
-			$this->get_template($response, $row['z_name'], $out);
+			$this->get_template($response, $row['z_name'], $o);
 
-			if (!empty($out)) {
-				$output[] = $out;
+			if (!empty($o)) {
+				$output[] = $o;
 			}
-			unset($out);
+			unset($o);
 		}
 
 		$response->body = $output;
@@ -180,6 +180,7 @@ class TemplateResource extends TokenResource {
 		if ($statement->execute(array(":name" => $identifier)) === false) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not query PowerDNS server.";
+			$out = array();
 			return $response;
 		}
 
@@ -212,16 +213,14 @@ class TemplateResource extends TokenResource {
 	}
 
 	private function create_template($response, $data, &$out = null) {
-		$response = $this->get_template($response, $data->identifier, $out);
+		$response = $this->get_template($response, $data->identifier, $o);
 
-		if (!empty($out)) {
+		if (!empty($o)) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Resource already exists";
 			$out = false;
 			return $response;
 		}
-
-		unset($out);
 
 		try {
 			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
@@ -293,28 +292,26 @@ class TemplateResource extends TokenResource {
 	}
 
 	private function modify_template($response, $data, &$out = null) {
-		$response = $this->delete_template($response, $data->identifier, $out);
+		$response = $this->delete_template($response, $data->identifier, $o);
 
-		if ($out === false) {
+		if ($o === false) {
 			return $response;
 		}
 
-		return $this->create_template($response, $data, $out);
+		return $this->create_template($response, $data);
 	}
 
 
 	private function delete_template($response, $identifier, &$out = null) {
-		$response = $this->get_template($response, $identifier, $out);
+		$response = $this->get_template($response, $identifier, $o);
 
-		if (empty($out)) {
+		if (empty($o)) {
 			$response->code = Response::NOTFOUND;
 			$response->error = "Resource does not exist";
 			$out = false;
 
 			return $response;
 		}
-
-		unset($out);
 
 		try {
 			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
