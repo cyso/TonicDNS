@@ -65,8 +65,8 @@ class Request {
             'text/css' => 'css',
             'application/javascript' => 'js',
             'application/json' => 'json',
-	    'text/xml' => 'xml',
-	    'application/xml' => 'xml',
+            'text/xml' => 'xml',
+            'application/xml' => 'xml',
             'application/rss+xml' => 'rss',
             'application/atom+xml' => 'atom',
             'application/x-gzip' => 'gz',
@@ -513,7 +513,7 @@ class Request {
         if ($this->method === "GET") {
             parse_str($this->queryString, $data);
             return $data;
-	}
+        }
 
         $type = null;
         if (isset($this->requestType)) {
@@ -534,35 +534,58 @@ class Request {
                 $type = null;
                 break;
             }
-        } else {
+        }
+
+        if ($type == null) {
             if (preg_match("#<([a-z_:][a-z]*(\s+[a-z_:][a-z]*\s*=\s*(\"[^\"]*\"|'[^']*'))*|/[a-z_:][a-z]*)\s*>#", $this->data)) {
                 $type = "xml";
             } else if (preg_match("#^(\"(\.|[^\"\\\n\r])*?\"|[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t])+?$#", $this->data)) {
                 $type = "json";
-            } else {
-                $type = null;
             }
         }
 
         if ($type == null) {
-                return null;
+            return null;
         }
 
         $data = null;
         switch ($type) {
         case "xml":
-                $data = simplexml_load_string($this->data);
-                break;
+            $data = simplexml_load_string($this->data, null, LIBXML_NOBLANKS | LIBXML_NOEMPTYTAG | LIBXML_NOWARNING | LIBXML_NOERROR | LIBXML_NOENT);
+            $data = $this->sanitizeXMLObject($data);
+            break;
         case "json":
-                $data = json_decode($this->data);
-                break;
+            $data = json_decode($this->data);
+            break;
         }
 
+
         if (!is_object($data)) {
-                return null;
+            return null;
         } else {
-                return $data;
+            return $data;
         }
+    }
+
+    private function sanitizeXMLObject($object) {
+        var_dump($copy);
+        $object = unserialize(preg_replace("/(^|;)*O:[0-9]+:\"[^\"]+\":/i","\\1"."O:" . strlen('stdClass').":\"stdClass\":", serialize($object)));
+        var_dump($object);
+        $copy = clone $object;
+
+        foreach($object as $k => $child) {
+            var_dump($k);
+            var_dump($child);
+            if (isset($child->item)) {
+                if (is_array($child->item)) {
+                    $copy->{$k} = $child->item;
+                } else {
+                    $copy->{$k} = array($child->item);
+                }
+            }
+        }
+
+        return $copy;
     }
 }
 

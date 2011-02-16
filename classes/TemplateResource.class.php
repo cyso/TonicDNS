@@ -29,6 +29,7 @@ class TemplateResource extends TokenResource {
 	 *
 	 * {
 	 * 	"identifier": <string>,
+	 * 	"description": <string>,
 	 * 	"entries": 0..n {
 	 * 		"name": <string>,
 	 * 		"type": <string>,

@@ -60,6 +60,7 @@ class FormattedResponse extends Response {
 		case "json":
 		default:
 			$this->body = json_encode($this->body);
+			$this->addHeader('Content-Type', 'application/json');
 			break;
 		case "xml":
 			$xmlnode = new XMLNode("response");
@@ -89,6 +90,7 @@ class FormattedResponse extends Response {
 			}
 
 			$this->body = $xmlnode->generate();
+			$this->addHeader('Content-Type', 'application/xml');
 			break;
 		}
 
