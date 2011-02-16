@@ -13,17 +13,15 @@ class TemplateResource extends TokenResource {
 	 * @param mixed $request Request parameters
 	 * @return Response DNS template data if successful, false with error message otherwise.
 	 */
-	public function get($request, $identifier) {
+	public function get($request, $identifier = null) {
 		$response = new FormattedResponse($request);
 		$data = $request->parseData();
 
 		if (empty($identifier)) {
-			$response->code = Response::BADREQUEST;
-			$response->error = "Identifier was missing or invalid. Ensure that the identifier is in valid format.";
-			return $response;
+			return $this->get_all_templates($response);
+		} else {
+			return $this->get_template($response, $identifier);
 		}
-
-		return $this->get_template($response, $identifier);
 	}
 
 	/**
@@ -125,6 +123,42 @@ class TemplateResource extends TokenResource {
 		}
 
 		return $response;
+	}
+
+	private function get_all_templates($response, &$out = null) {
+		try {
+			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+		} catch (PDOException $e) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not connect to PowerDNS server.";
+			return $response;
+		}
+
+		$result = $connection->query(sprintf(
+			"SELECT z.id as z_id, z.name as z_name, z.descr as z_descr
+			 FROM `%s` z;", PowerDNSConfig::DB_TEMPLATE_TABLE)
+		);
+
+		if ($result === false) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not query PowerDNS server.";
+			return $response;
+		}
+
+		$output = array();
+		while (($row = $result->fetch(PDO::FETCH_ASSOC)) !== false ) {
+			$this->get_template($response, $row['z_name'], $out);
+
+			if (!empty($out)) {
+				$output[] = $out;
+			}
+			unset($out);
+		}
+
+		$response->body = $output;
+		$out = $output;
+		return $response;
+
 	}
 
 	private function get_template($response, $identifier, &$out = null) {

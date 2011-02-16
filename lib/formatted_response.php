@@ -66,6 +66,9 @@ class FormattedResponse extends Response {
 
 			if (is_array($this->body)) {
 				foreach ($this->body as $k => $v) {
+					if (is_int($k)) {
+						$k = "item";
+					}
 					if (is_array($v)) {
 						$n = new XMLNode($k);
 						$n->addArray($v);
