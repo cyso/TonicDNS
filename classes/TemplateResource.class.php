@@ -285,6 +285,7 @@ class TemplateResource extends TokenResource {
 
 		$connection->commit();
 
+		$response->code = Response::OK;
 		$response->body = true;
 		$out = true;
 
@@ -328,7 +329,6 @@ class TemplateResource extends TokenResource {
 		$delete = $connection->prepare(sprintf("DELETE FROM `%s` WHERE %s.name = :name;", PowerDNSConfig::DB_TEMPLATE_TABLE, PowerDNSConfig::DB_TEMPLATE_TABLE));
 
 		if ($delete->execute(array(":name" => $identifier)) === false) {
-			var_dump($delete);
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Rolling back transaction, failed to delete template.";
 
@@ -340,6 +340,7 @@ class TemplateResource extends TokenResource {
 
 		$connection->commit();
 
+		$response->code = Response::OK;
 		$response->body = true;
 		$out = true;
 
