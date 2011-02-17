@@ -214,9 +214,13 @@ class Request {
         }
         
         array_shift($parts);
-        foreach ($parts as $part) {
-            $this->accept[10][] = $part;
-            $this->acceptLang[10][] = $part;
+		foreach ($parts as $part) {
+            if (array_search($part, $this->mimetypes)) {
+                $this->accept[10][] = $part;
+                $this->acceptLang[10][] = $part;
+            } else {
+                $this->uri .= "." . $part;
+            }
         }
         
         // sort accept headers
