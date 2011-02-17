@@ -126,14 +126,14 @@ class ZoneResource extends TokenResource {
 
 		if (empty($identifier) && (empty($data) || !isset($data->name) || !isset($data->records) || empty($data->records))) {
 			$response->code = Response::BADREQUEST;
-			$response->error = "Identifier and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error = "Identifier and/or records were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
 			return $response;
 		}
 
 		if (!empty($identifier)) {
 			return $this->delete_zone($response, $identifier);
 		} else {
-			return $this->delete_record($response, $data->name, $data);
+			return $this->delete_records($response, $data->name, $data);
 		}
 	}
 
@@ -438,6 +438,10 @@ class ZoneResource extends TokenResource {
 			}
 		}
 
+		if ($commit) {
+			$connection->commit();
+		}
+
 		$response->code = Response::OK;
 		$response->body = true;
 
@@ -562,7 +566,64 @@ class ZoneResource extends TokenResource {
 		return $response;
 	}
 
-	public function delete_record($response, $identifier, $records, &$out = null) {
+	public function delete_records($response, $identifier, $data, &$out = null) {
+		$this->get_zone($response, $identifier, $o, false);
+
+		if (empty($o)) {
+			$response->code = Response::NOTFOUND;
+			$response->error = "Resource does not exist";
+			$out = false;
+			return $response;
+		}
+
+		unset($o);
+
+		try {
+			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+		} catch (PDOException $e) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not connect to PowerDNS server.";
+			$out = false;
+			return $response;
+		}
+
+		$connection->beginTransaction();
+
+		$statement = $connection->prepare(sprintf(
+			"DELETE FROM `%s` WHERE name = :name AND type = :type AND prio = :priority;", PowerDNSConfig::DB_RECORD_TABLE
+		));
+
+		$statement->bindParam(":name", $r_name);
+		$statement->bindParam(":type", $r_type);
+		$statement->bindParam(":priority", $r_prio);
+
+		foreach ($data->records as $record) {
+			if (!isset($record->name) || !isset($record->type) || !isset($record->priority) ) {
+				continue;
+			}
+
+			$r_name = $record->name;
+			$r_type = $record->type;
+			$r_prio = $record->priority;
+
+			if ($statement->execute() === false) {
+				$response->code = Response::INTERNALSERVERERROR;
+				$response->error = sprintf("Rolling back transaction, failed to delete zone record - name: '%s', type: '%s', prio: '%s'", $r_name, $r_type, $r_prio);
+
+				$connection->rollback();
+				$out = false;
+
+				return $response;
+			}
+		}
+
+		$response->code = Response::OK;
+		$response->body = true;
+		$out = true;
+
+		$connection->commit();
+
+		return $response;
 
 	}
 }
