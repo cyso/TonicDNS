@@ -10,11 +10,41 @@ class ZoneResource extends TokenResource {
 	 * Retrieves an existing DNS zone.
 	 *
 	 * If no identifier is specified, all zones will be retrieved without records.
+	 *
+	 * Response:
+	 *
+	 * [
+	 *      {
+	 *            "name": <string>,
+	 *            "type": MASTER|SLAVE|NATIVE,
+	 *            "master": <ipv4 optional>,
+	 *            "last_check": <int optional>,
+	 *            "notified_serial": <int optional>
+	 *      },0..n
+	 * ]
+	 *
 	 * If an identifier is specified, one zone will be retrieved with records.
+	 *
+	 * Response:
+	 *
+	 * {
+	 *      "name": <string>,
+	 *      "type": MASTER|SLAVE|NATIVE,
+	 *      "master": <ipv4>,
+	 *      "last_check": <int>,
+	 *      "records": [ {
+	 *              "name": <string>,
+	 *              "type": <string>,
+	 *              "content": <string>,
+	 *              "ttl": <int optional>,
+	 *              "priority: <int optional>,
+	 *              "change_date": <int optional>
+	 *      },0..n ]
+	 * }
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
-	 * @return Response DNS zone data if successful, false with error message otherwise.
+	 * @return Response DNS zone data if successful, error message otherwise.
 	 */
 	public function get($request, $identifier = null) {
 		$response = new FormattedResponse($request);
@@ -30,25 +60,51 @@ class ZoneResource extends TokenResource {
 	/**
 	 * Create a new DNS zone, or insert records into an existing DNS zone.
 	 *
+	 * If no identifier is specified, a new DNS zone is created.
+	 *
+	 * Request:
+	 *
 	 * {
-	 * 	"name": <string>,
-	 * 	"type": master|slave|native,
-	 * 	"master": ipv4,
-	 * 	"templates": 0..n {
-	 *		"identifier": <string>
-	 * 	},
-	 * 	"records": 0..n {
-	 * 		"name": <string>,
-	 * 		"type": <string>,
-	 * 		"content": <string>,
-	 * 		"ttl": <int>,
-	 * 		"priority": <int>
-	 * 	}
+	 *     "name": <string>,
+	 *     "type": MASTER|SLAVE|NATIVE,
+	 *     "master": <ipv4 optional>,
+	 *     "templates": [ {
+	 *             "identifier": <string>
+	 *     },0..n ]
+	 *     "records": [ {
+	 *             "name": <string>,
+	 *             "type": <string>,
+	 *             "content": <string>,
+	 *             "ttl": <int optional>,
+	 *             "priority": <int optional>
+	 *     },0..n ]
 	 * }
+	 *
+	 * Response:
+	 *
+	 * true
+	 *
+	 * If an identifier is specified, records will be inserted into an existing DNS zone.
+	 *
+	 * Request:
+	 *
+	 * {
+	 *     "records": [ {
+	 *             "name": <string>,
+	 *             "type": <string>,
+	 *             "content": <string>,
+	 *             "ttl": <int optional>,
+	 *             "priority": <int optional>
+	 *     },0..n ]
+	 * }
+	 *
+	 * Response:
+	 *
+	 * true
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
-	 * @return Response True if request was successful, false with error message otherwise.
+	 * @return Response True if request was successful, error message otherwise.
 	 */
 	public function put($request, $identifier = null) {
 		$response = new FormattedResponse($request);
@@ -77,15 +133,20 @@ class ZoneResource extends TokenResource {
 	/**
 	 * Update an existing DNS zone. Only works for zones, not records. At least one field has to be specified.
 	 *
+	 * Request:
+	 *
 	 * {
-	 * 	"name": <string>,
-	 * 	"master": ipv4,
-	 * 	"type": master|slave|native,
+	 *     "name": <string>,
+	 *     "type": MASTER|SLAVE|NATIVE,
+	 *     "master": <ipv4 optional>,
 	 * }
+	 * Response:
+	 *
+	 * true
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
-	 * @return Response True if request was successful, false with error message otherwise.
+	 * @return Response True if request was successful, error message otherwise.
 	 */
 	public function post($request, $identifier = null) {
 		$response = new FormattedResponse($request);
@@ -110,20 +171,31 @@ class ZoneResource extends TokenResource {
 	 * Delete an existing DNS zone, or delete a record from the zone.
 	 *
 	 * If an identifier is specified, the entire zone will be deleted.
+	 *
+	 * Response:
+	 *
+	 * true
+	 *
 	 * If a body is specified, but no identifier, the specified entries will be deleted from the zone.
 	 *
+	 * Request:
+	 *
 	 * {
-	 * 	"name": <string>,
-	 * 	"records": 1..n {
-	 * 		"name": <string>,
-	 * 		"type": <string>,
-	 * 		"priority": <int>,
-	 * 	}
+	 *     "name": <string>,
+	 *     "records": [ {
+	 *             "name": <string>,
+	 *             "type": <string>,
+	 *             "priority": <int>
+	 *     },1..n ]
 	 * }
+	 *
+	 * Response:
+	 *
+	 * true
 	 *
 	 * @access public
 	 * @params mixed $request Request parameters
-	 * @return Response True if zone was deleted, false with error message otherwise.
+	 * @return Response True if zone was deleted, error message otherwise.
 	 */
 	public function delete($request, $identifier = null) {
 		$response = new FormattedResponse($request);

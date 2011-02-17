@@ -2,15 +2,28 @@
 /**
  * Authentication Resource.
  * @uri /authenticate
+ * @uri /authenticate/:token
  * @uri /authentication
+ * @uri /authentication/:token
  */
 class AuthenticationResource extends Resource {
 	/**
 	 * Corresponds to login.
 	 *
+	 * Request:
+	 *
 	 * {
 	 * 	"username": <username>,
 	 * 	"password": <password>
+	 * }
+	 *
+	 * Response:
+	 *
+	 * {
+	 *      "username": <string>,
+	 *      "valid_until": <int>,
+	 *      "hash": <string>,
+	 *      "token": <string>
 	 * }
 	 *
 	 * @access public
@@ -55,34 +68,28 @@ class AuthenticationResource extends Resource {
 	 * Corresponds to session validation. If the session is valid, the duration is refreshed. If it is 
 	 * not, but it does exist, it will be destroyed.
 	 *
-	 * {
-	 * 	"token": <token>
-	 * }
+	 * Response:
+	 *
+	 * true
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
-	 * @return Response True if session is still valid, false otherwise.
+	 * @return Response True if session is still valid, error message otherwise.
 	 */
-	public function post($request) {
+	public function post($request, $token = null) {
 		$response = new FormattedResponse($request);
 		$data = $request->parseData();
 
-		if ($data == null) {
+		if (empty($token)) {
 			$response->code = Response::BADREQUEST;
-			$response->error = "Request body was malformed. Ensure the body is in valid format.";
-			return $response;
-		}
-
-		if (!isset($data->token)) {
-			$response->code = Response::BADREQUEST;
-			$response->error = "Token was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error = "Token was missing or invalid. Ensure that the body was provided.";
 			return $response;
 		}
 
 		$backend = new SqliteTokenBackend();
-		$token = $backend->refreshToken($data->token);
+		$t = $backend->refreshToken($token);
 
-		if ($token == null) {
+		if ($t == null) {
 			$response->code = Response::FORBIDDEN;
 			$response->error = "Token was invalid.";
 			return $response;
@@ -96,40 +103,34 @@ class AuthenticationResource extends Resource {
 	/**
 	 * Corresponds to session logout.
 	 *
-	 * {
-	 * 	"token": <token>
-	 * }
+	 * Response:
+	 *
+	 * true
 	 *
 	 * @access public
 	 * @params mixed $request Request parameters
-	 * @return Response True if session was terminated, false otherwise.
+	 * @return Response True if session was terminated, error message otherwise.
 	 */
-	public function delete($request) {
+	public function delete($request, $token = null) {
 		$response = new FormattedResponse($request);
 		$data = $request->parseData();
 
-		if ($data == null) {
-			$response->code = Response::BADREQUEST;
-			$response->error = "Request body was malformed. Ensure the body is in valid format.";
-			return $response;
-		}
-
 		if (!isset($data->token)) {
 			$response->code = Response::BADREQUEST;
-			$response->error = "Token was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error = "Token was missing or invalid. Ensure that the body was provided.";
 			return $response;
 		}
 
 		$backend = new SqliteTokenBackend();
-		$token = $backend->retrieveToken($data->token);
+		$t = $backend->retrieveToken($token);
 
-		if ($token == null) {
+		if ($t == null) {
 			$response->code = Response::FORBIDDEN;
 			$response->body = array("error" => "Token was invalid.");
 			return $response;
 		}
 
-		if (!$backend->destroyToken($token)) {
+		if (!$backend->destroyToken($t)) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->body = array("error" => "Token could not be destroyed.");
 			return $response;
