@@ -23,7 +23,7 @@ class ZoneResource extends TokenResource {
 		if (empty($identifier)) {
 			return $this->get_all_zones($response);
 		} else {
-			return $this->get_zones($response, $identifier);
+			return $this->get_zone($response, $identifier);
 		}
 	}
 
@@ -168,7 +168,69 @@ class ZoneResource extends TokenResource {
 	}
 
 	private function get_zone($response, $identifier, &$out = null) {
+		try {
+			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+		} catch (PDOException $e) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not connect to PowerDNS server.";
+			return $response;
+		}
 
+		$statement = $connection->prepare(sprintf(
+			"SELECT z.id as z_id, z.name as z_name, z.master as z_master, z.last_check as z_last_check, z.type as z_type, z.notified_serial as z_notified_serial,
+			        r.id as r_id, r.name as r_name, r.type as r_type, r.content as r_content, r.ttl as r_ttl, r.prio as r_prio, r.change_date as r_change_date
+			 FROM `%s` z
+			 INNER JOIN `%s` r ON (z.id = r.domain_id)
+			 WHERE z.name = :name
+			 ORDER BY r_name ASC;", PowerDNSConfig::DB_ZONE_TABLE, PowerDNSConfig::DB_RECORD_TABLE)
+		);
+
+		if ($statement === false) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not query PowerDNS server.";
+			return $response;
+		}
+
+		if ($statement->execute(array(":name" => $identifier)) === false) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not query PowerDNS server.";
+			return $response;
+		}
+
+		$output = array();
+		$first = true;
+		while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
+			if ($first) {
+				$output['name'] = $row['z_name'];
+				$output['type'] = $row['z_type'];
+				if (!empty($row['z_master'])) { $output['master'] = $row['z_master']; }
+				if (!empty($row['z_last_check'])) { $output['last_check'] = $row['z_last_check']; }
+				if (!empty($row['z_notified_serial'])) { $output['notified_serial'] = $row['z_notified_serial']; }
+				$first = false;
+			}
+
+			$record = array();
+			$record['name'] = $row['r_name'];
+			$record['type'] = $row['r_type'];
+			$record['content'] = $row['r_content'];
+			$record['ttl'] = $row['r_ttl'];
+			$record['priority'] = $row['r_prio'];
+			if (!empty($row['r_change_date'])) { $record['change_date'] = $row['r_change_date']; }
+
+			$output['records'][] = $record;
+		}
+
+		if (empty($output)) {
+			$response->code = Response::NOTFOUND;
+			$response->body = array();
+			$out = array();
+		} else {
+			$response->code = Response::OK;
+			$response->body = $output;
+			$out = $output;
+		}
+
+		return $response;
 	}
 
 	private function create_zone($response, $data, &$out = null) {

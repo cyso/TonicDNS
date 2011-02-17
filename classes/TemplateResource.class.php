@@ -152,7 +152,6 @@ class TemplateResource extends TokenResource {
 		$response->body = $output;
 		$out = $output;
 		return $response;
-
 	}
 
 	private function get_template($response, $identifier, &$out = null) {
@@ -205,7 +204,7 @@ class TemplateResource extends TokenResource {
 			$response->body = array();
 			$out = array();
 		} else {
-			$response->code = Response::CREATED;
+			$response->code = Response::OK;
 			$response->body = $output;
 			$out = $output;
 		}
