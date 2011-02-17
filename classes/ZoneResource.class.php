@@ -28,7 +28,7 @@ class ZoneResource extends TokenResource {
 	}
 
 	/**
-	 * Create a new DNS zone.
+	 * Create a new DNS zone, or insert records into an existing DNS zone.
 	 *
 	 * {
 	 * 	"name": <string>,
@@ -60,13 +60,18 @@ class ZoneResource extends TokenResource {
 			return $response;
 		}
 
-		if (!isset($data->name) || !isset($data->type)) {
+		if ((!isset($data->name) || !isset($data->type)) && empty($identifier)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
 			return $response;
 		}
 
-		return $this->create_zone($response, $data);
+		if (!empty($identifier)) {
+			return $this->create_records($response, $identifier, $data);
+		} else {
+			return $this->create_zone($response, $data);
+
+		}
 	}
 
 	/**
@@ -371,13 +376,13 @@ class ZoneResource extends TokenResource {
 
 		if (!ctype_digit($identifier)) {
 			$zone_id = $connection->prepare(sprintf(
-				"SELECT domain_id FROM `%s` WHERE name = :name LIMIT 1;", PowerDNSConfig::DB_ZONE_TABLE
+				"SELECT id FROM `%s` WHERE name = :name LIMIT 1;", PowerDNSConfig::DB_ZONE_TABLE
 			));
 
 			$error = false;
-			if (($result = $zone_id->execute(array(":name" => $identifier))) === false) {
+			if ($zone_id->execute(array(":name" => $identifier)) === false) {
 				$error = true;
-			} else if (($identifier = $result->fetchColumn()) === false) {
+			} else if (($identifier = $zone_id->fetchColumn()) === false) {
 				$error = true;
 			}
 
@@ -406,7 +411,7 @@ class ZoneResource extends TokenResource {
 		$statement->bindParam(":prio", $r_prio);
 		$statement->bindValue(":date", time(), PDO::PARAM_INT);
 
-		foreach ($data as $record) {
+		foreach ($data->records as $record) {
 			if (!isset($record->name) || !isset($record->content) || !isset($record->type)) {
 				continue;
 			}
