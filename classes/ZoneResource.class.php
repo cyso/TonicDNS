@@ -70,7 +70,7 @@ class ZoneResource extends TokenResource {
 	}
 
 	/**
-	 * Update an existing DNS zone. This method will overwrite the entire Zone. Only works for zones, not records.
+	 * Update an existing DNS zone. Only works for zones, not records. At least one field has to be specified.
 	 *
 	 * {
 	 * 	"name": <string>,
@@ -86,19 +86,19 @@ class ZoneResource extends TokenResource {
 		$response = new FormattedResponse($request);
 		$data = $request->parseData();
 
-		if ($data == null) {
+		if ($data == null || empty($data)) {
 			$response->code = Response::BADREQUEST;
-			$response->error = "Request body was malformed. Ensure the body is in valid format.";
+			$response->error = "Request body was malformed. Ensure the body is in valid format, and that the body is not empty.";
 			return $response;
 		}
 
-		if (empty($identifier) || !isset($data->identifier) || !isset($data->entries) || empty($data->entries)) {
+		if (empty($identifier)) {
 			$response->code = Response::BADREQUEST;
-			$response->error = "Identifier and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error = "Identifier was missing or invalid. Ensure that the body is in valid format.";
 			return $response;
 		}
 
-		return $this->modify_zone($response, $data);
+		return $this->modify_zone($response, $identifier, $data);
 	}
 
 	/**
@@ -108,7 +108,6 @@ class ZoneResource extends TokenResource {
 	 * If a body is specified, but no identifier, the specified entries will be deleted from the zone.
 	 *
 	 * {
-	 * 	"name": <string>,
 	 * 	"records": 1..n {
 	 * 		"name": <string>,
 	 * 		"type": <string>,
@@ -441,8 +440,74 @@ class ZoneResource extends TokenResource {
 		return $response;
 	}
 
-	public function modify_zone($response, $data, &$out = null) {
+	public function modify_zone($response, $identifier, $data, &$out = null) {
+		$this->get_zone($response, $identifier, $o, false);
 
+		if (empty($o)) {
+			$response->code = Response::NOTFOUND;
+			$response->error = "Resource does not exist";
+			$out = false;
+			return $response;
+		}
+
+		unset($o);
+
+		try {
+			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+		} catch (PDOException $e) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not connect to PowerDNS server.";
+			$out = false;
+			return $response;
+		}
+
+		$parameters = array();
+		$query = "UPDATE `%s` SET ";
+
+		if (isset($data->name)) {
+			$query .= "name = :name ";
+			$parameters[":name"] = $data->name;
+		}
+		if (isset($data->master)) {
+			$query .= "master = :master ";
+			$parameters[":master"] = $data->master;
+		}
+		if (isset($data->type)) {
+			$query .= "type = :type ";
+			$parameters[":type"] = $data->type;
+		}
+
+		if (empty($parameters)) {
+			$response->code = Response::BADREQUEST;
+			$response->error = "Nothing to change, check your request body.";
+			$out = false;
+			return $response;
+		}
+
+		$query .= "WHERE name = :identifier";
+		$parameters[":identifier"] = $identifier;
+
+		$connection->beginTransaction();
+
+		$statement = $connection->prepare(sprintf($query, PowerDNSConfig::DB_ZONE_TABLE));
+
+		if ($statement->execute($parameters) === false) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Rolling back transaction, failed to modify zone.";
+
+			$connection->rollback();
+			$out = false;
+
+			return $response;
+		}
+
+		$connection->commit();
+
+		$response->code = Response::OK;
+		$response->body = true;
+		$out = true;
+
+		return $response;
 	}
 
 	public function delete_zone($response, $identifier, &$out = null) {
