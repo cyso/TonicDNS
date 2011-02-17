@@ -266,11 +266,17 @@ class ZoneResource extends TokenResource {
 					continue;
 				} else {
 					foreach ($p['entries'] as $entry) {
-						$entry['name'] = str_replace(array("[ZONE]"), array($data->name), $entry['name']);
-						$entry['content'] = str_replace(array("[ZONE]"), array($data->name), $entry['content']);
-						$records[] = $entry;
+						$e = new stdClass();
+						$e->name = str_replace(array("[ZONE]"), array($data->name), $entry['name']);
+						$e->content = str_replace(array("[ZONE]"), array($data->name), $entry['content']);
+						$e->type = $entry['type'];
+						$e->ttl = $entry['ttl'];
+						$e->priority = $entry['priority'];
+						$records[] = $e;
 					}
 				}
+
+				unset($p);
 			}
 		}
 
@@ -293,7 +299,7 @@ class ZoneResource extends TokenResource {
 		));
 
 		$zone->bindValue(":name", $data->name);
-		$zone->bindValue(":type", $data->type);
+		$zone->bindValue(":type", strtoupper($data->type));
 		if (isset($data->master) && !empty($data->master)) {
 			$zone->bindValue(":master", $data->master);
 		} else {
@@ -310,22 +316,18 @@ class ZoneResource extends TokenResource {
 			return $response;
 		}
 
-/*
 		if (!empty($records)) {
-			foreach ($records as $record) {
-				$response = $this->create_record($response, $data->name, $record, $r, true);
+			$response = $this->create_records($response, $connection->lastInsertId(), $records, $r, true, $connection);
 
-				if ($r === false) {
-					$connection->rollback();
-					$out = false;
+			if ($r === false) {
+				$connection->rollback();
+				$out = false;
 
-					return $response;
-				}
+				return $response;
 			}
 		}
- */
-		#$connection->commit();
-		$connection->rollback();
+
+		$connection->commit();
 
 		$response->code = Response::OK;
 		$response->body = true;
@@ -334,8 +336,109 @@ class ZoneResource extends TokenResource {
 		return $response;
 	}
 
-	public function create_record($response, $identifier, $data, &$out = null, $skip_domain_check = false, $connection = null) {
+	public function create_records($response, $identifier, $data, &$out = null, $skip_domain_check = false, $connection = null) {
+		if ($skip_domain_check === false) {
+			$this->get_zone($response, $data->name, $o, false);
 
+			if (empty($o)) {
+				$response->code = Response::NOTFOUND;
+				$response->error = "Zone does not exist";
+				$out = false;
+				return $response;
+			}
+
+			unset($o);
+		}
+
+		$commit = false;
+		if ($connection === null) {
+			try {
+				$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			} catch (PDOException $e) {
+				$response->code = Response::INTERNALSERVERERROR;
+				$response->error = "Could not connect to PowerDNS server.";
+				return $response;
+			}
+
+			$connection->beginTransaction();
+			$commit = true;
+		}
+
+		if (!ctype_digit($identifier)) {
+			$zone_id = $connection->prepare(sprintf(
+				"SELECT domain_id FROM `%s` WHERE name = :name LIMIT 1;", PowerDNSConfig::DB_ZONE_TABLE
+			));
+
+			$error = false;
+			if (($result = $zone_id->execute(array(":name" => $identifier))) === false) {
+				$error = true;
+			} else if (($identifier = $result->fetchColumn()) === false) {
+				$error = true;
+			}
+
+			if ($error) {
+				$response->code = Response::NOTFOUND;
+				$response->error = "Could not find zone to insert record into.";
+				$out = false;
+
+				if ($commit) {
+					$connection->rollback();
+				}
+
+				return $response;
+			}
+		}
+
+		$statement = $connection->prepare(sprintf(
+			"INSERT INTO `%s` (domain_id, name, type, content, ttl, prio, change_date) VALUES (:id, :name, :type, :content, :ttl, :prio, :date);", PowerDNSConfig::DB_RECORD_TABLE
+		));
+
+		$statement->bindValue(":id", $identifier, PDO::PARAM_INT);
+		$statement->bindParam(":name", $r_name);
+		$statement->bindParam(":type", $r_type);
+		$statement->bindParam(":content", $r_content);
+		$statement->bindParam(":ttl", $r_ttl);
+		$statement->bindParam(":prio", $r_prio);
+		$statement->bindValue(":date", time(), PDO::PARAM_INT);
+
+		foreach ($data as $record) {
+			if (!isset($record->name) || !isset($record->content) || !isset($record->type)) {
+				continue;
+			}
+
+			$r_name = $record->name;
+			$r_type = $record->type;
+			$r_content = $record->content;
+			if (isset($record->ttl)) {
+				$r_ttl = $record->ttl;
+			} else {
+				$r_ttl = PowerDNSConfig::DNS_DEFAULT_RECORD_TTL;
+			}
+			if (isset($record->priority)) {
+				$r_prio = $record->priority;
+			} else {
+				$r_prio = PowerDNSConfig::DNS_DEFAULT_RECORD_PRIORITY;
+			}
+
+			if ($statement->execute() === false) {
+				$response->code = Response::INTERNALSERVERERROR;
+				$response->error = sprintf("Rolling back transaction, failed to insert zone record - name: '%s', type: '%s', content: '%s', ttl: '%s', prio: '%s'", $r_name, $r_type, $r_content, $r_ttl, $r_prio);
+
+				$out = false;
+
+				if ($commit) {
+					$connection->rollback();
+				}
+				return $response;
+			}
+		}
+
+		$response->code = Response::OK;
+		$response->body = true;
+
+		$out = true;
+
+		return $response;
 	}
 
 	public function modify_zone($response, $data, &$out = null) {
