@@ -187,7 +187,9 @@ class ZoneFunctions {
 		}
 
 		if (!empty($records)) {
-			$response = ZoneFunctions::create_records($response, $connection->lastInsertId(), $records, $r, true, $connection);
+			$object = new stdClass();
+			$object->records = $records;
+			$response = ZoneFunctions::create_records($response, $connection->lastInsertId(), $object, $r, true, $connection);
 
 			if ($r === false) {
 				$connection->rollback();
