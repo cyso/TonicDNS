@@ -96,7 +96,7 @@ class TemplateResource extends TokenResource {
 			return $response;
 		}
 
-		return $this->modify_template($response, $data);
+		return $this->modify_template($response, $identifier, $data);
 	}
 
 	/**
@@ -119,7 +119,7 @@ class TemplateResource extends TokenResource {
 		return $this->delete_template($response, $identifier);
 	}
 
-	private function get_all_templates($response, &$out = null) {
+	public function get_all_templates($response, &$out = null) {
 		try {
 			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
 		} catch (PDOException $e) {
@@ -152,10 +152,9 @@ class TemplateResource extends TokenResource {
 		$response->body = $output;
 		$out = $output;
 		return $response;
-
 	}
 
-	private function get_template($response, $identifier, &$out = null) {
+	public function get_template($response, $identifier, &$out = null) {
 		try {
 			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
 		} catch (PDOException $e) {
@@ -205,7 +204,7 @@ class TemplateResource extends TokenResource {
 			$response->body = array();
 			$out = array();
 		} else {
-			$response->code = Response::CREATED;
+			$response->code = Response::OK;
 			$response->body = $output;
 			$out = $output;
 		}
@@ -213,7 +212,7 @@ class TemplateResource extends TokenResource {
 		return $response;
 	}
 
-	private function create_template($response, $data, &$out = null) {
+	public function create_template($response, $data, &$out = null) {
 		$response = $this->get_template($response, $data->identifier, $o);
 
 		if (!empty($o)) {
@@ -293,8 +292,8 @@ class TemplateResource extends TokenResource {
 		return $response;
 	}
 
-	private function modify_template($response, $data, &$out = null) {
-		$response = $this->delete_template($response, $data->identifier, $o);
+	public function modify_template($response, $identifier, $data, &$out = null) {
+		$response = $this->delete_template($response, $identifier, $o);
 
 		if ($o === false) {
 			return $response;
@@ -304,7 +303,7 @@ class TemplateResource extends TokenResource {
 	}
 
 
-	private function delete_template($response, $identifier, &$out = null) {
+	public function delete_template($response, $identifier, &$out = null) {
 		$response = $this->get_template($response, $identifier, $o);
 
 		if (empty($o)) {

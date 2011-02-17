@@ -572,14 +572,10 @@ class Request {
     }
 
     private function sanitizeXMLObject($object) {
-        var_dump($copy);
         $object = unserialize(preg_replace("/(^|;)*O:[0-9]+:\"[^\"]+\":/i","\\1"."O:" . strlen('stdClass').":\"stdClass\":", serialize($object)));
-        var_dump($object);
         $copy = clone $object;
 
         foreach($object as $k => $child) {
-            var_dump($k);
-            var_dump($child);
             if (isset($child->item)) {
                 if (is_array($child->item)) {
                     $copy->{$k} = $child->item;
