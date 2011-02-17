@@ -108,11 +108,13 @@ class ZoneResource extends TokenResource {
 	 * If a body is specified, but no identifier, the specified entries will be deleted from the zone.
 	 *
 	 * {
+	 * 	"name": <string>,
 	 * 	"records": 1..n {
 	 * 		"name": <string>,
 	 * 		"type": <string>,
 	 * 		"priority": <int>,
 	 * 	}
+	 * }
 	 *
 	 * @access public
 	 * @params mixed $request Request parameters
@@ -122,13 +124,17 @@ class ZoneResource extends TokenResource {
 		$response = new FormattedResponse($request);
 		$data = $request->parseData();
 
-		if (empty($identifier)) {
+		if (empty($identifier) && (empty($data) || !isset($data->name) || !isset($data->records) || empty($data->records))) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
 			return $response;
 		}
 
-		return $this->delete_zone($response, $identifier);
+		if (!empty($identifier)) {
+			return $this->delete_zone($response, $identifier);
+		} else {
+			return $this->delete_record($response, $data->name, $data);
+		}
 	}
 
 	public function get_all_zones($response, &$out = null) {
@@ -511,7 +517,49 @@ class ZoneResource extends TokenResource {
 	}
 
 	public function delete_zone($response, $identifier, &$out = null) {
+		$this->get_zone($response, $identifier, $o, false);
 
+		if (empty($o)) {
+			$response->code = Response::NOTFOUND;
+			$response->error = "Resource does not exist";
+			$out = false;
+			return $response;
+		}
+
+		unset($o);
+
+		try {
+			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+		} catch (PDOException $e) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not connect to PowerDNS server.";
+			$out = false;
+			return $response;
+		}
+
+		$connection->beginTransaction();
+
+		$statement = $connection->prepare(sprintf(
+			"DELETE FROM `%s` WHERE name = :name;", PowerDNSConfig::DB_ZONE_TABLE
+		));
+
+		if ($statement->execute(array(":name" => $identifier)) === false) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not query PowerDNS server.";
+
+			$connection->rollback();
+			$out = false;
+
+			return $response;
+		}
+
+		$response->code = Response::OK;
+		$response->body = true;
+		$out = true;
+
+		$connection->commit();
+
+		return $response;
 	}
 
 	public function delete_record($response, $identifier, $records, &$out = null) {
