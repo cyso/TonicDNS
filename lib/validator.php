@@ -69,13 +69,24 @@ class Validator {
 	}
 
 	/**
+	 * Convenience constructor to construct and load the Validator in one statement.
+	 * @access public
+	 * @param array $values Array of property/value pairs.
+	 */
+	public function __construct($values = null) {
+		if (!empty($values)) {
+			$this->initialize($values);
+		}
+	}
+
+	/**
 	 * Convenience method to load multiple values at once. Accepts an associative array:
 	 * array('foo' => 'bar') will be translated to Validator->foo = bar.
 	 * @access public
 	 * @param array $values Array of property/value pairs.
 	 */
 	public function initialize($values) {
-		if (is_array($values)) {
+		if (is_array($values) || $values instanceof stdClass ) {
 			foreach ($values as $key => $value) {
 				$this->$key = $value;
 			}
@@ -140,6 +151,8 @@ class Validator {
 						}
 					}
 				}
+			} else {
+				echo "No validator for property: " . $property . "\n";
 			}
 		}
 
