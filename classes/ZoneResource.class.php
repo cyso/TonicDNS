@@ -53,6 +53,15 @@ class ZoneResource extends TokenResource {
 		if (empty($identifier)) {
 			return ZoneFunctions::get_all_zones($response);
 		} else {
+			$validator = new ZoneValidator();
+			$validator->identifier = $identifier;
+
+			if (!$validator->validates()) {
+				$response->code = Response::BADREQUEST;
+				$response->error = $validator->getFormattedErrors();
+				return $response;
+			}
+
 			return ZoneFunctions::get_zone($response, $identifier);
 		}
 	}
@@ -122,6 +131,17 @@ class ZoneResource extends TokenResource {
 			return $response;
 		}
 
+		$validator = new ZoneValidator($data);
+		if (!empty($identifier)) {
+			$validator->identifier = $identifier;
+		}
+
+		if (!$validator->validates()) {
+			$response->code = Response::BADREQUEST;
+			$response->error = $validator->getFormattedErrors();
+			return $response;
+		}
+
 		if (!empty($identifier)) {
 			return ZoneFunctions::create_records($response, $identifier, $data);
 		} else {
@@ -161,6 +181,15 @@ class ZoneResource extends TokenResource {
 		if (empty($identifier)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier was missing or invalid. Ensure that the body is in valid format.";
+			return $response;
+		}
+
+		$validator = new ZoneValidator($data);
+		$validator->identifier = $identifier;
+
+		if (!$validator->validates()) {
+			$response->code = Response::BADREQUEST;
+			$response->error = $validator->getFormattedErrors();
 			return $response;
 		}
 
@@ -204,6 +233,17 @@ class ZoneResource extends TokenResource {
 		if (empty($identifier) && (empty($data) || !isset($data->name) || !isset($data->records) || empty($data->records))) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier and/or records were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			return $response;
+		}
+
+		$validator = new ZoneValidator($data);
+		if (!empty($identifier)) {
+			$validator->identifier = $identifier;
+		}
+
+		if (!$validator->validates()) {
+			$response->code = Response::BADREQUEST;
+			$response->error = $validator->getFormattedErrors();
 			return $response;
 		}
 

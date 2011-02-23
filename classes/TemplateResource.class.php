@@ -36,6 +36,15 @@ class TemplateResource extends TokenResource {
 		if (empty($identifier)) {
 			return TemplateFunctions::get_all_templates($response);
 		} else {
+			$validator = new TemplateValidator();
+			$validator->identifier = $identifier;
+
+			if (!$validator->validates()) {
+				$response->code = Response::BADREQUEST;
+				$response->error = $validator->getFormattedErrors();
+				return $response;
+			}
+
 			return TemplateFunctions::get_template($response, $identifier);
 		}
 	}
@@ -77,7 +86,15 @@ class TemplateResource extends TokenResource {
 
 		if (!isset($data->identifier) || !isset($data->description) || !isset($data->entries) || empty($data->entries)) {
 			$response->code = Response::BADREQUEST;
-			$response->error = "Identifier and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error = "Identifier, description and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			return $response;
+		}
+
+		$validator = new TemplateValidator($data);
+
+		if (!$validator->validates()) {
+			$response->code = Response::BADREQUEST;
+			$response->error = $validator->getFormattedErrors();
 			return $response;
 		}
 
@@ -125,6 +142,14 @@ class TemplateResource extends TokenResource {
 			return $response;
 		}
 
+		$validator = new TemplateValidator($data);
+
+		if (!$validator->validates()) {
+			$response->code = Response::BADREQUEST;
+			$response->error = $validator->getFormattedErrors();
+			return $response;
+		}
+
 		return TemplateFunctions::modify_template($response, $identifier, $data);
 	}
 
@@ -144,6 +169,15 @@ class TemplateResource extends TokenResource {
 		if (empty($identifier)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			return $response;
+		}
+
+		$validator = new TemplateValidator();
+		$validator->identifier = $identifier;
+
+		if (!$validator->validates()) {
+			$response->code = Response::BADREQUEST;
+			$response->error = $validator->getFormattedErrors();
 			return $response;
 		}
 

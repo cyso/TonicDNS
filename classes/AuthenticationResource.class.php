@@ -46,6 +46,14 @@ class AuthenticationResource extends Resource {
 			return $response;
 		}
 
+		$validator = new AuthenticationValidator($data);
+
+		if (!$validator->validates()) {
+			$response->code = Response::BADREQUEST;
+			$response->error = $validator->getFormattedErrors();
+			return $response;
+		}
+
 		$token = new Token();
 		$token->username = $data->username;
 		$token->password = $data->password;
@@ -82,7 +90,16 @@ class AuthenticationResource extends Resource {
 
 		if (empty($token)) {
 			$response->code = Response::BADREQUEST;
-			$response->error = "Token was missing or invalid. Ensure that the body was provided.";
+			$response->error = "Token was missing or invalid.";
+			return $response;
+		}
+
+		$validator = new AuthenticationValidator();
+		$validator->token = $token;
+
+		if (!$validator->validates()) {
+			$response->code = Response::BADREQUEST;
+			$response->error = $validator->getFormattedErrors();
 			return $response;
 		}
 
@@ -115,9 +132,18 @@ class AuthenticationResource extends Resource {
 		$response = new FormattedResponse($request);
 		$data = $request->parseData();
 
-		if (!isset($data->token)) {
+		if (!isset($token)) {
 			$response->code = Response::BADREQUEST;
-			$response->error = "Token was missing or invalid. Ensure that the body was provided.";
+			$response->error = "Token was missing or invalid.";
+			return $response;
+		}
+
+		$validator = new AuthenticationValidator();
+		$validator->token = $token;
+
+		if (!$validator->validates()) {
+			$response->code = Response::BADREQUEST;
+			$response->error = $validator->getFormattedErrors();
 			return $response;
 		}
 
