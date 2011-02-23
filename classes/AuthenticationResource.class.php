@@ -7,6 +7,26 @@
  * @uri /authentication/:token
  */
 class AuthenticationResource extends Resource {
+	private $backend = null;
+
+	/**
+	 * Resource constructor
+	 * @param str[] parameters Parameters passed in from the URL as matched from the URI regex
+	 */
+	function  __construct($parameters = array()) {
+		parent::__construct($parameters);
+
+		switch (PowerDnsConfig::TOKEN_BACKEND) {
+		case "PDO":
+			$this->backend = new PDOTokenBackend();
+			break;
+		default:
+			$this->backend = new SqliteTokenBackend();
+			break;
+		}
+	}
+
+
 	/**
 	 * Corresponds to login.
 	 *
@@ -58,8 +78,7 @@ class AuthenticationResource extends Resource {
 		$token->username = $data->username;
 		$token->password = $data->password;
 
-		$backend = new SqliteTokenBackend();
-		$token = $backend->createToken($token);
+		$token = $this->backend->createToken($token);
 
 		if ($token == null) {
 			$response->code = Response::FORBIDDEN;
@@ -103,8 +122,7 @@ class AuthenticationResource extends Resource {
 			return $response;
 		}
 
-		$backend = new SqliteTokenBackend();
-		$t = $backend->refreshToken($token);
+		$t = $this->backend->refreshToken($token);
 
 		if ($t == null) {
 			$response->code = Response::FORBIDDEN;
@@ -147,8 +165,7 @@ class AuthenticationResource extends Resource {
 			return $response;
 		}
 
-		$backend = new SqliteTokenBackend();
-		$t = $backend->retrieveToken($token);
+		$t = $this->backend->retrieveToken($token);
 
 		if ($t == null) {
 			$response->code = Response::FORBIDDEN;
@@ -156,7 +173,7 @@ class AuthenticationResource extends Resource {
 			return $response;
 		}
 
-		if (!$backend->destroyToken($t)) {
+		if (!$this->backend->destroyToken($t)) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->body = array("error" => "Token could not be destroyed.");
 			return $response;

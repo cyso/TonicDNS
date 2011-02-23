@@ -20,8 +20,16 @@ class TokenResource extends Resource {
 			return $response;
 		}
 
+		$backend = null;
 		try {
-			$backend = new SqliteTokenBackend();
+			switch (PowerDnsConfig::TOKEN_BACKEND) {
+			case "PDO":
+				$backend = new PDOTokenBackend();
+				break;
+			default:
+				$backend = new SqliteTokenBackend();
+				break;
+			}
 		} catch (Exception $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = $e->getMessage();
