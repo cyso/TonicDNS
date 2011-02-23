@@ -91,6 +91,9 @@ class Validator {
 				$this->$key = $value;
 			}
 		} else {
+			if (ValidatorConfig::DEBUG === true) {
+				debug_print_backtrace();
+			}
 			trigger_error("Invalid parameters passed to Validator initialisation. Check your input variables and try again.", E_USER_ERROR);
 		}
 	}
@@ -151,8 +154,9 @@ class Validator {
 						}
 					}
 				}
-			} else {
-				echo "No validator for property: " . $property . "\n";
+			} else if (ValidatorConfig::DEBUG === true) {
+				debug_print_backtrace();
+				trigger_error("No validator for property: " . $property, E_USER_ERROR);
 			}
 		}
 

@@ -1,0 +1,14 @@
+<?php
+
+class ValidatorConfig {
+	/**
+	 * Debug mode enables stacktraces on initialization errors, and triggers an error when a parameter was set without an available validator rule.
+	 */
+	const DEBUG = false;
+
+	/**
+	 * Bind compatability determines if FQDNs may end with a dot (.).
+	 */
+	const BIND_COMPATABILITY = false;
+}
+?>

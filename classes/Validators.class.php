@@ -7,7 +7,11 @@ define("VALID_STRING", "#^[\w -+.]*$#");
 define("VALID_QUOTED", "#^[\"']{1}.*[\"']{1}$#");
 define("VALID_TOKEN", "#^[0-9a-f]{40}$#");
 define("VALID_ZONE_TYPE", "#MASTER|SLAVE|NATIVE#");
-define("VALID_DOMAIN", "#^(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}$#");
+if (ValidatorConfig::BIND_COMPATABILITY === true) {
+	define("VALID_DOMAIN", "#^(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}[\.]?$#");
+} else {
+	define("VALID_DOMAIN", "#^(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}$#");
+}
 define("VALID_RECORD_NAME", "#^(?:\*\.)?(?:[a-zA-Z0-9_](?:[a-zA-Z0-9\-_]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}$#");
 define("VALID_RECORD_TYPE", "#^A|AAAA|CNAME|MX|NAPTR|NS|PTR|RP|SOA|SPF|SSHFP|SRV|TXT$#");
 define("VALID_IPV4", "#^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$#");
@@ -58,7 +62,7 @@ class TemplateValidator extends Validator {
 		),
 	);
 
-	private function check_entries($entries) {
+	public function check_entries($entries) {
 		if (!is_array($entries)) {
 			return "Template entries are not valid. Must be specified as an (empty) array.";
 		}
@@ -92,8 +96,8 @@ class ZoneValidator extends Validator {
 		),
 		"name" => array(
 			"valid_name" => array(
-				"rule" => VALID_NAME,
-				"message" => "Identifier is not valid. May only contain word characters (a-z, 0-9), underscores (_) or dashes (-)."
+				"rule" => VALID_DOMAIN,
+				"message" => "Name is not valid. Must be a valid FQDN."
 			)
 		),
 		"type" => array(
@@ -134,9 +138,9 @@ class ZoneValidator extends Validator {
 		),
 	);
 
-	private function check_zone_type($value) {
+	public function check_zone_type($value) {
 		if (!ctype_upper($value)) {
-			return "Zone type is not valid. Must be a string.";
+			return "Zone type is not valid. Must be an uppercase string.";
 		}
 		if (preg_match(VALID_ZONE_TYPE, $value) === 0) {
 			return "Zone type is not valid. Must be one of (case-sensitive): MASTER, SLAVE or NATIVE.";
@@ -147,7 +151,7 @@ class ZoneValidator extends Validator {
 		return true;
 	}
 
-	private function check_zone_master($value) {
+	public function check_zone_master($value) {
 		if (isset($this->type) && $this->type === "SLAVE") {
 			if (preg_match(VALID_IPV4, $value) === 0) {
 				return "Zone master is not valid. Type is set to SLAVE, but the master IP is not a valid IPv4 address.";
@@ -160,7 +164,7 @@ class ZoneValidator extends Validator {
 		return true;
 	}
 
-	private function check_templates($templates) {
+	public function check_templates($templates) {
 		if (!is_array($templates)) {
 			return "Zone templates are not valid. Must be specified as an (empty) array.";
 		}
@@ -168,7 +172,7 @@ class ZoneValidator extends Validator {
 		$errors = array();
 		foreach ($templates as $entry) {
 			$template = new TemplateValidator();
-			$template->initialize($entry);
+			$template->identifier = $entry;
 
 			if (!$template->validates()) {
 				$errors[] = $template->getFormattedErrors();
@@ -184,7 +188,7 @@ class ZoneValidator extends Validator {
 
 	}
 
-	private function check_records($records) {
+	public function check_records($records) {
 		if (!is_array($records)) {
 			return "Zone records are not valid. Must be specified as an (empty) array.";
 		}
@@ -256,7 +260,7 @@ class RecordValidator extends Validator {
 
 	);
 
-	private function check_record_content($content) {
+	public function check_record_content($content) {
 		$prefix = "Record content is not valid. ";
 		if (empty($content)) {
 			return $prefix . "Content may never be empty.";
@@ -338,18 +342,18 @@ class RecordValidator extends Validator {
 			break;
 		case "SOA":
 			$parts = explode(" ", $content);
-			if (count($parts !== 7)) {
+			if (count($parts) !== 7) {
 				return $prefix . "A SOA record must provide all 7 parts: <primary> <hostmaster> <serial> <refresh> <retry> <expire> <default_ttl>";
 			}
 			for ($i = 0; $i < count($parts); $i++) {
 				switch ($i) {
 				case 0:
 					if (preg_match(VALID_DOMAIN, $parts[$i]) === 0 && $parts[$i] !== "default-soa-name") {
-						return $prefix . "A SOA record must provide a valid FQDN or 'default-soa-name as primary hostname.";
+						return $prefix . "A SOA record must provide a valid FQDN or 'default-soa-name' as primary hostname.";
 					}
 					break;
 				case 1:
-					if (filter_var($parts[$i], FILTER_VALIDATE_EMAIL) === false) {
+					if (filter_var($parts[$i], FILTER_VALIDATE_EMAIL) === false && preg_match(VALID_DOMAIN, $parts[$i]) === 0) {
 						return $prefix . "A SOA record must provide a valid email address as hostmaster.";
 					}
 					break;
@@ -379,7 +383,7 @@ class RecordValidator extends Validator {
 			break;
 		case "SSHFP":
 			$parts = explode(" ", $content);
-			if (count($parts !== 3)) {
+			if (count($parts) !== 3) {
 				return $prefix . "A SSHFP record must provide all 3 parts: <algorithm> <fp-type> <fingeprint>";
 			}
 			for ($i = 0; $i < count($parts); $i++) {
