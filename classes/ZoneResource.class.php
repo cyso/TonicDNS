@@ -9,7 +9,8 @@ class ZoneResource extends TokenResource {
 	/**
 	 * Retrieves an existing DNS zone.
 	 *
-	 * If no identifier is specified, all zones will be retrieved without records.
+	 * If no identifier is specified and no body is supplied, all zones will be
+	 * retrieved without records.
 	 *
 	 * Response:
 	 *
@@ -22,6 +23,9 @@ class ZoneResource extends TokenResource {
 	 *            "notified_serial": <int optional>
 	 *      },0..n
 	 * ]
+	 *
+	 * If a query is specified in the URL,  all zones matching the given wildcard
+	 * are returned. The * wildcard is supported.
 	 *
 	 * If an identifier is specified, one zone will be retrieved with records.
 	 *
@@ -51,7 +55,25 @@ class ZoneResource extends TokenResource {
 		$data = $request->parseData();
 
 		if (empty($identifier)) {
-			return ZoneFunctions::get_all_zones($response);
+			if ($data === null) {
+				return ZoneFunctions::get_all_zones($response);
+			} else {
+				$validator = new ZoneValidator($data);
+
+				if (!isset($data->query)) {
+					$response->code = Response::BADREQUEST;
+					$response->error = "Query was missing. Ensure that the body is in valid format and all required parameters are present.";
+					return $response;
+				}
+
+				if (!$validator->validates()) {
+					$response->code = Response::BADREQUEST;
+					$response->error = $validator->getFormattedErrors();
+					return $response;
+				}
+
+				return ZoneFunctions::query_zones($response, $data->query);
+			}
 		} else {
 			$validator = new ZoneValidator();
 			$validator->identifier = $identifier;

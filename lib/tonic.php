@@ -571,7 +571,7 @@ class Request {
     function parseData() {
         if ($this->method === "GET") {
             parse_str($this->queryString, $data);
-            return $data;
+            return json_decode(json_encode($data));
         }
 
         $type = null;

@@ -12,6 +12,7 @@ if (ValidatorConfig::BIND_COMPATABILITY === true) {
 } else {
 	define("VALID_DOMAIN", "#^(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}$#");
 }
+define("VALID_QUERY", "#^[a-zA-Z0-9\-\.*]+$#");
 define("VALID_RECORD_NAME", "#^(?:\*\.)?(?:[a-zA-Z0-9_](?:[a-zA-Z0-9\-_]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}$#");
 define("VALID_RECORD_TYPE", "#^A|AAAA|CNAME|MX|NAPTR|NS|PTR|RP|SOA|SPF|SSHFP|SRV|TXT$#");
 define("VALID_IPV4", "#^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$#");
@@ -140,6 +141,12 @@ class ZoneValidator extends Validator {
 			"valid_records" => array(
 				"rule" => array("check_records"),
 				"message" => "DNS records are not valid."
+			)
+		),
+		"query" => array(
+			"valid_query" => array(
+				"rule" => VALID_QUERY,
+				"message" => "Query is invalid. May only contain alphanumeric characters, dashes (-), dots (.) and wildcards (*)."
 			)
 		),
 	);

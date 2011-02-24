@@ -43,6 +43,50 @@ class ZoneFunctions {
 		return $response;
 	}
 
+	public function query_zones($response, $query, &$out = null) {
+		try {
+			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+		} catch (PDOException $e) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not connect to PowerDNS server.";
+			return $response;
+		}
+
+		$query = str_replace("*", "%", $query);
+
+		$stat = $connection->prepare(sprintf(
+			"SELECT z.id as z_id, z.name as z_name, z.master as z_master, z.last_check as z_last_check, z.type as z_type, z.notified_serial as z_notified_serial
+			 FROM `%s` z
+			 WHERE z.name LIKE :query
+			 ORDER BY z_name ASC;", PowerDNSConfig::DB_ZONE_TABLE
+		 ));
+
+
+		if ($stat->execute(array(":query" => $query)) === false) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not query PowerDNS server.";
+			return $response;
+		}
+
+		$output = array();
+		while (($row = $stat->fetch(PDO::FETCH_ASSOC)) !== false ) {
+			$zone = array();
+			$zone['name'] = $row['z_name'];
+			$zone['type'] = $row['z_type'];
+			if (!empty($row['z_master'])) { $zone['master'] = $row['z_master']; }
+			if (!empty($row['z_last_check'])) { $zone['last_check'] = $row['z_last_check']; }
+			if (!empty($row['z_notified_serial'])) { $zone['notified_serial'] = $row['z_notified_serial']; }
+
+			$output[] = $zone;
+		}
+
+		$response->body = $output;
+		$response->log_message = sprintf("Retrieved %d zones with query %s.", count($output), $query);
+		$out = $output;
+
+		return $response;
+	}
+
 	public function get_zone($response, $identifier, &$out = null, $details = true) {
 		try {
 			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);

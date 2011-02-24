@@ -16,13 +16,17 @@ class AuthenticationResource extends AnonymousResource {
 	function  __construct($parameters = array()) {
 		parent::__construct($parameters);
 
-		switch (PowerDnsConfig::TOKEN_BACKEND) {
-		case "PDO":
-			$this->backend = new PDOTokenBackend();
-			break;
-		default:
-			$this->backend = new SqliteTokenBackend();
-			break;
+		try {
+			switch (PowerDnsConfig::TOKEN_BACKEND) {
+			case "PDO":
+				$this->backend = new PDOTokenBackend();
+				break;
+			default:
+				$this->backend = new SqliteTokenBackend();
+				break;
+			}
+		} catch (Exception $e) {
+			trigger_error($e->message, E_USER_ERROR);
 		}
 	}
 
