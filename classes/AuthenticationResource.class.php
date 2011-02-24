@@ -6,7 +6,7 @@
  * @uri /authentication
  * @uri /authentication/:token
  */
-class AuthenticationResource extends Resource {
+class AuthenticationResource extends AnonymousResource {
 	private $backend = null;
 
 	/**
@@ -34,7 +34,8 @@ class AuthenticationResource extends Resource {
 	 *
 	 * {
 	 * 	"username": <username>,
-	 * 	"password": <password>
+	 * 	"password": <password>,
+	 * 	"local_user": <username>
 	 * }
 	 *
 	 * Response:

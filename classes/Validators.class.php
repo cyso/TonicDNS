@@ -31,6 +31,12 @@ class AuthenticationValidator extends Validator {
 				"message" => "Password is not valid. This field is mandatory, and must be set."
 			)
 		),
+		"local_user" => array(
+			"valid_local_user" => array(
+				"rule" => VALID_NOTEMPTY,
+				"message" => "Local user must be set."
+			)
+		),
 		"token" => array(
 			"valid_token" => array(
 				"rule" => VALID_TOKEN,
