@@ -96,7 +96,13 @@ class TokenResource extends Resource {
 		}
 
 		$logger->setOutput(json_encode($response->body));
-		$logger->writeLog("Action completed", $response->code);
+		if (!empty($response->error)) {
+			$logger->writeLog($response->error, $response->code);
+		} else if (!empty($response->log_message)) {
+			$logger->writeLog($response->log_message, $response->code);
+		} else {
+			$logger->writeLog("Action completed", $response->code);
+		}
 
 		return $response;
 	}

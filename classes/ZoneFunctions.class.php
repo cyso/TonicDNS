@@ -37,7 +37,9 @@ class ZoneFunctions {
 		}
 
 		$response->body = $output;
+		$response->log_message = sprintf("Retrieved %d zones.", count($output));
 		$out = $output;
+
 		return $response;
 	}
 
@@ -105,10 +107,12 @@ class ZoneFunctions {
 		if (empty($output)) {
 			$response->code = Response::NOTFOUND;
 			$response->body = array();
+			$response->log_message = sprintf("Zone %s was not found.", $identifier);
 			$out = array();
 		} else {
 			$response->code = Response::OK;
 			$response->body = $output;
+			$response->log_message = sprintf("Zone %s with %d records was retrieved.", $identifier, count($output['records']));
 			$out = $output;
 		}
 
@@ -203,6 +207,7 @@ class ZoneFunctions {
 
 		$response->code = Response::OK;
 		$response->body = true;
+		$response->log_message = sprintf("Zone %s was created with %d records.", $data->name, count($records));
 		$out = true;
 
 		return $response;
@@ -236,6 +241,7 @@ class ZoneFunctions {
 			$commit = true;
 		}
 
+		$orig_identifier = $identifier;
 		if (!ctype_digit($identifier)) {
 			$zone_id = $connection->prepare(sprintf(
 				"SELECT id FROM `%s` WHERE name = :name LIMIT 1;", PowerDNSConfig::DB_ZONE_TABLE
@@ -311,6 +317,7 @@ class ZoneFunctions {
 
 		$response->code = Response::OK;
 		$response->body = true;
+		$response->log_message = sprintf("Zone %s added %d records.", $orig_identifier, count($data->records));
 
 		$out = true;
 
@@ -382,6 +389,7 @@ class ZoneFunctions {
 
 		$response->code = Response::OK;
 		$response->body = true;
+		$response->log_message = sprintf("Zone %s was modified.", $identifier);
 		$out = true;
 
 		return $response;
@@ -424,11 +432,12 @@ class ZoneFunctions {
 			return $response;
 		}
 
+		$connection->commit();
+
 		$response->code = Response::OK;
 		$response->body = true;
+		$response->log_message = sprintf("Zone %s was deleted.", $identifier);
 		$out = true;
-
-		$connection->commit();
 
 		return $response;
 	}
@@ -484,14 +493,14 @@ class ZoneFunctions {
 			}
 		}
 
-		$response->code = Response::OK;
-		$response->body = true;
-		$out = true;
-
 		$connection->commit();
 
-		return $response;
+		$response->code = Response::OK;
+		$response->body = true;
+		$response->log_message = sprintf("Zone %s deleted %d records.", $identifier, count($data->records));
+		$out = true;
 
+		return $response;
 	}
 }
 ?>

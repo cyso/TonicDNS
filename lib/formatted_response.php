@@ -15,6 +15,12 @@ class FormattedResponse extends Response {
 	public $error = null;
 
 	/**
+	 * Log message that will replace the "Action complete" success message on logging.
+	 * @var string
+	 */
+	public $log_message = null;
+
+	/**
 	 * Convert the object into a string suitable for printing
 	 * @return str
 	 */

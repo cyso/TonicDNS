@@ -89,6 +89,7 @@ class AuthenticationResource extends AnonymousResource {
 
 		$response->code = Response::OK;
 		$response->body = $token->toArray();
+		$response->log_message = "Token was successfully created.";
 
 		return $response;
 	}
@@ -134,6 +135,7 @@ class AuthenticationResource extends AnonymousResource {
 
 		$response->code = Response::OK;
 		$response->body = true;
+		$response->log_message = "Token was successfully validated.";
 
 		return $response;
 	}
@@ -184,6 +186,7 @@ class AuthenticationResource extends AnonymousResource {
 
 		$response->code = Response::OK;
 		$response->body = true;
+		$response->log_message = "Token was successfully invalidated.";
 
 		return $response;
 	}
