@@ -15,12 +15,13 @@ class TokenResource extends Resource {
 		$response->addHeader('X-Resource', get_class($this));
 
 		$logger = new Logger($request->uri, $request->method, "Anonymous");
+		$logger->setInput(json_encode($request->parseData()));
 
 		if (!isset($request->requestToken) || empty($request->requestToken)) {
 			$response->code = Response::UNAUTHORIZED;
 			$response->error = "Authorization required";
 			$response->addHeader('X-Debug', "No token supplied");
-			$logger->writeLog($response->error);
+			$logger->writeLog($response->error, $response->code);
 
 			return $response;
 		}
@@ -38,7 +39,7 @@ class TokenResource extends Resource {
 		} catch (Exception $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = $e->getMessage();
-			$logger->writeLog($response->error);
+			$logger->writeLog($response->error, $response->code);
 
 			return $response;
 		}
@@ -49,7 +50,7 @@ class TokenResource extends Resource {
 			$response->code = Response::FORBIDDEN;
 			$response->error = "Authentication failed";
 			$response->addHeader('X-Debug', "Token is null");
-			$logger->writeLog($response->error);
+			$logger->writeLog($response->error, $response->code);
 
 			return $response;
 		}
@@ -60,7 +61,7 @@ class TokenResource extends Resource {
 			$response->code = Response::FORBIDDEN;
 			$response->error = "Authentication failed";
 			$response->addHeader('X-Debug', "Token is invalid");
-			$logger->writeLog($response->error);
+			$logger->writeLog($response->error, $response->code);
 
 			return $response;
 		}
@@ -79,7 +80,7 @@ class TokenResource extends Resource {
 			} catch (Exception $e) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = $e;
-				$logger->writeLog($response->error);
+				$logger->writeLog($response->error, $response->code);
 				return $response;
 			}
 		} else {
@@ -90,11 +91,12 @@ class TokenResource extends Resource {
 				$request->method,
 				$request->uri
 			);
-			$logger->writeLog($response->error);
+			$logger->writeLog($response->error, $response->code);
 			return $response;
 		}
 
-		$logger->writeLog("Action completed");
+		$logger->setOutput(json_encode($response->body));
+		$logger->writeLog("Action completed", $response->code);
 
 		return $response;
 	}

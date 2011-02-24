@@ -87,6 +87,7 @@ class AuthenticationResource extends AnonymousResource {
 			return $response;
 		}
 
+		$response->code = Response::OK;
 		$response->body = $token->toArray();
 
 		return $response;
@@ -131,6 +132,7 @@ class AuthenticationResource extends AnonymousResource {
 			return $response;
 		}
 
+		$response->code = Response::OK;
 		$response->body = true;
 
 		return $response;
@@ -180,6 +182,7 @@ class AuthenticationResource extends AnonymousResource {
 			return $response;
 		}
 
+		$response->code = Response::OK;
 		$response->body = true;
 
 		return $response;

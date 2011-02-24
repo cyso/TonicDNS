@@ -29,6 +29,8 @@ class AnonymousResource extends Resource {
 			$logger = new Logger($request->uri, $request->method, "Anonymous");
 		}
 
+		$logger->setInput(json_encode($data));
+
 		if (method_exists($this, $request->method)) {
 			$parameters = $this->parameters;
 			array_unshift($parameters, $request);
@@ -41,7 +43,7 @@ class AnonymousResource extends Resource {
 			} catch (Exception $e) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = $e;
-				$logger->writeLog($response->error);
+				$logger->writeLog($response->error, $response->code);
 				return $response;
 			}
 		} else {
@@ -52,11 +54,16 @@ class AnonymousResource extends Resource {
 				$request->method,
 				$request->uri
 			);
-			$logger->writeLog($response->error);
+			$logger->writeLog($response->error, $resonse->code);
 			return $response;
 		}
 
-		$logger->writeLog("Action completed");
+		$logger->setOutput(json_encode($response->body));
+		if (!empty($response->error)) {
+			$logger->writeLog($response->error, $response->code);
+		} else {
+			$logger->writeLog("Action completed", $response->code);
+		}
 
 		return $response;
 	}
