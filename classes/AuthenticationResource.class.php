@@ -6,7 +6,7 @@
  * @uri /authentication
  * @uri /authentication/:token
  */
-class AuthenticationResource extends Resource {
+class AuthenticationResource extends AnonymousResource {
 	private $backend = null;
 
 	/**
@@ -34,7 +34,8 @@ class AuthenticationResource extends Resource {
 	 *
 	 * {
 	 * 	"username": <username>,
-	 * 	"password": <password>
+	 * 	"password": <password>,
+	 * 	"local_user": <username>
 	 * }
 	 *
 	 * Response:
@@ -86,7 +87,9 @@ class AuthenticationResource extends Resource {
 			return $response;
 		}
 
+		$response->code = Response::OK;
 		$response->body = $token->toArray();
+		$response->log_message = "Token was successfully created.";
 
 		return $response;
 	}
@@ -130,7 +133,9 @@ class AuthenticationResource extends Resource {
 			return $response;
 		}
 
+		$response->code = Response::OK;
 		$response->body = true;
+		$response->log_message = "Token was successfully validated.";
 
 		return $response;
 	}
@@ -179,7 +184,9 @@ class AuthenticationResource extends Resource {
 			return $response;
 		}
 
+		$response->code = Response::OK;
 		$response->body = true;
+		$response->log_message = "Token was successfully invalidated.";
 
 		return $response;
 	}

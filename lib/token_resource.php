@@ -11,11 +11,17 @@ class TokenResource extends Resource {
 	 */
 	function exec($request) {
 		$response = new FormattedResponse($request);
+		# good for debugging, remove this at some point
+		$response->addHeader('X-Resource', get_class($this));
+
+		$logger = new Logger($request->uri, $request->method, "Anonymous");
+		$logger->setInput(json_encode($request->parseData()));
 
 		if (!isset($request->requestToken) || empty($request->requestToken)) {
 			$response->code = Response::UNAUTHORIZED;
 			$response->error = "Authorization required";
 			$response->addHeader('X-Debug', "No token supplied");
+			$logger->writeLog($response->error, $response->code);
 
 			return $response;
 		}
@@ -33,6 +39,8 @@ class TokenResource extends Resource {
 		} catch (Exception $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = $e->getMessage();
+			$logger->writeLog($response->error, $response->code);
+
 			return $response;
 		}
 
@@ -42,14 +50,18 @@ class TokenResource extends Resource {
 			$response->code = Response::FORBIDDEN;
 			$response->error = "Authentication failed";
 			$response->addHeader('X-Debug', "Token is null");
+			$logger->writeLog($response->error, $response->code);
 
 			return $response;
 		}
+
+		$logger->setUser($token->username);
 
 		if ($backend->validateToken($token) === false) {
 			$response->code = Response::FORBIDDEN;
 			$response->error = "Authentication failed";
 			$response->addHeader('X-Debug', "Token is invalid");
+			$logger->writeLog($response->error, $response->code);
 
 			return $response;
 		}
@@ -68,6 +80,7 @@ class TokenResource extends Resource {
 			} catch (Exception $e) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = $e;
+				$logger->writeLog($response->error, $response->code);
 				return $response;
 			}
 		} else {
@@ -78,10 +91,18 @@ class TokenResource extends Resource {
 				$request->method,
 				$request->uri
 			);
+			$logger->writeLog($response->error, $response->code);
+			return $response;
 		}
 
-		# good for debugging, remove this at some point
-		$response->addHeader('X-Resource', get_class($this));
+		$logger->setOutput(json_encode($response->body));
+		if (!empty($response->error)) {
+			$logger->writeLog($response->error, $response->code);
+		} else if (!empty($response->log_message)) {
+			$logger->writeLog($response->log_message, $response->code);
+		} else {
+			$logger->writeLog("Action completed", $response->code);
+		}
 
 		return $response;
 	}

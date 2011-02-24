@@ -34,6 +34,7 @@ class TemplateFunctions {
 		}
 
 		$response->body = $output;
+		$response->log_message = sprintf("Retrieved %d templates.", count($output));
 		$out = $output;
 		return $response;
 	}
@@ -86,10 +87,12 @@ class TemplateFunctions {
 		if (empty($output['entries'])) {
 			$response->code = Response::NOTFOUND;
 			$response->body = array();
+			$response->log_message = sprintf("Template %s was not found.", $identifier);
 			$out = array();
 		} else {
 			$response->code = Response::OK;
 			$response->body = $output;
+			$response->log_message = sprintf("Template %s was retrieved.", $identifier);
 			$out = $output;
 		}
 
@@ -171,6 +174,7 @@ class TemplateFunctions {
 
 		$response->code = Response::OK;
 		$response->body = true;
+		$response->log_message(sprintf("Template %s was created or modified with $d records.", $data->identifier, count($data->entries)));
 		$out = true;
 
 		return $response;
@@ -226,6 +230,7 @@ class TemplateFunctions {
 
 		$response->code = Response::OK;
 		$response->body = true;
+		$response->log_message = sprintf("Template %s was deleted.", $identifier);
 		$out = true;
 
 		return $response;
