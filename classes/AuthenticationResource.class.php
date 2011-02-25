@@ -13,7 +13,7 @@ class AuthenticationResource extends AnonymousResource {
 	 * Resource constructor
 	 * @param str[] parameters Parameters passed in from the URL as matched from the URI regex
 	 */
-	function  __construct($parameters = array()) {
+	function  __construct($parameters) {
 		parent::__construct($parameters);
 
 		try {

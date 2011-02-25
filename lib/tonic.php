@@ -536,7 +536,7 @@ class Request {
             }
             return new $resource['class']($parameters);
         }
-        return new $this->noResource();
+        return new $this->noResource(array());
         
     }
     
@@ -650,13 +650,13 @@ class Request {
  */
 class Resource {
     
-    protected $parameters = array();
+    private $parameters;
     
     /**
      * Resource constructor
      * @param str[] parameters Parameters passed in from the URL as matched from the URI regex
      */
-    function  __construct($parameters = array()) {
+    function  __construct($parameters) {
         $this->parameters = $parameters;
     }
     
