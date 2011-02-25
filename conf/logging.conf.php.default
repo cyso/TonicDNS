@@ -1,0 +1,17 @@
+<?php
+
+class LoggingConfig {
+	/**
+	 * Syslog identity of this application
+	 */
+	const LOG_IDENT = "TonicDNS";
+	/**
+	 * Syslog facility to use for logging (LOG_USER = Event log on Windows)
+	 */
+	const LOG_FACILITY = LOG_USER;
+	/**
+	 * Enable logging of input and output variables
+	 */
+	const LOG_DEBUG = false;
+}
+?>
