@@ -5,6 +5,14 @@
  */
 class AnonymousResource extends Resource {
 	/**
+	 * Resource constructor
+	 * @param str[] parameters Parameters passed in from the URL as matched from the URI regex
+	 */
+	function  __construct($parameters) {
+		parent::__construct($parameters);
+	}
+
+	/**
 	 * Execute a request on this resource.
 	 * @param Request request
 	 * @return Response
