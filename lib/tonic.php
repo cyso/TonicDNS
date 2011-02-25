@@ -650,7 +650,7 @@ class Request {
  */
 class Resource {
     
-    private $parameters;
+    protected $parameters;
     
     /**
      * Resource constructor
