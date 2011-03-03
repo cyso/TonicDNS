@@ -4,7 +4,7 @@ class PowerDnsConfig {
 	/**
 	 * DSN of the PowerDNS master database
 	 */
-	const DB_DSN = "";
+	const DB_DSN = "mysql:dbname=powerdns;host=localhost";
 	/**
 	 * Credentials for database user
 	 */
@@ -14,16 +14,24 @@ class PowerDnsConfig {
 	/**
 	 * Relevant table names
 	 */
-	const DB_TEMPLATE_TABLE = "";
-	const DB_TEMPLATE_RECORDS_TABLE = "";
-	const DB_ZONE_TABLE = "";
-	const DB_RECORD_TABLE = "";
-	const DB_USER_TABLE = "";
+	const DB_TEMPLATE_TABLE = "zone_templ";
+	const DB_TEMPLATE_RECORDS_TABLE = "zone_templ_records";
+	const DB_ZONE_TABLE = "domains";
+	const DB_RECORD_TABLE = "records";
+	const DB_USER_TABLE = "users";
+	const DB_TOKEN_TABLE = "tokens";
 
 	/**
 	 * Default DNS settings
 	 */
 	const DNS_DEFAULT_RECORD_TTL = 86400;
 	const DNS_DEFAULT_RECORD_PRIORITY = 0;
+
+	/**
+	 * Default Token settings
+	 */
+	const TOKEN_BACKEND = "PDO";
+	const TOKEN_DEFAULT_DURATION = 60;
+	const TOKEN_SECRET = "";
 }
 ?>
