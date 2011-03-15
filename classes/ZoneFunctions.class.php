@@ -80,7 +80,10 @@ class ZoneFunctions {
 			 FROM `%s` z
 			 LEFT JOIN `%s` r ON (z.id = r.domain_id)
 			 WHERE z.name = :name
-			 ORDER BY r_name ASC;", PowerDNSConfig::DB_ZONE_TABLE, PowerDNSConfig::DB_RECORD_TABLE)
+			 ORDER BY r_name ASC,
+			 r_type DESC,
+			 r_prio ASC,
+			 r_content ASC;", PowerDNSConfig::DB_ZONE_TABLE, PowerDNSConfig::DB_RECORD_TABLE)
 		);
 
 		if ($statement === false) {
