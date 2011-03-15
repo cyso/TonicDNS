@@ -240,7 +240,7 @@ class ZoneFunctions {
 
 	public function create_records($response, $identifier, $data, &$out = null, $skip_domain_check = false, $connection = null) {
 		if ($skip_domain_check === false) {
-			ZoneFunctions::get_zone($response, $data->name, $o, false);
+			ZoneFunctions::get_zone($response, $identifier, $o, false);
 
 			if (empty($o)) {
 				$response->code = Response::NOTFOUND;
