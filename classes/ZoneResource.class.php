@@ -236,6 +236,7 @@ class ZoneResource extends TokenResource {
 	 *     "records": [ {
 	 *             "name": <string>,
 	 *             "type": <string>,
+	 *             "content": <string>,
 	 *             "priority": <int>
 	 *     },1..n ]
 	 * }

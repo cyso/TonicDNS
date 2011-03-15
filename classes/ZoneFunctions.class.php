@@ -488,20 +488,22 @@ class ZoneFunctions {
 		$connection->beginTransaction();
 
 		$statement = $connection->prepare(sprintf(
-			"DELETE FROM `%s` WHERE name = :name AND type = :type AND prio = :priority;", PowerDNSConfig::DB_RECORD_TABLE
+			"DELETE FROM `%s` WHERE name = :name AND type = :type AND prio = :priority AND content = :content;", PowerDNSConfig::DB_RECORD_TABLE
 		));
 
 		$statement->bindParam(":name", $r_name);
 		$statement->bindParam(":type", $r_type);
+		$statement->bindParam(":content", $r_content);
 		$statement->bindParam(":priority", $r_prio);
 
 		foreach ($data->records as $record) {
-			if (!isset($record->name) || !isset($record->type) || !isset($record->priority) ) {
+			if (!isset($record->name) || !isset($record->type) || !isset($record->priority || !isset($record->content)) ) {
 				continue;
 			}
 
 			$r_name = $record->name;
 			$r_type = $record->type;
+			$r_content = $record->content;
 			$r_prio = $record->priority;
 
 			if ($statement->execute() === false) {
