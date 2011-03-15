@@ -500,7 +500,7 @@ class ZoneFunctions {
 		$statement->bindParam(":priority", $r_prio);
 
 		foreach ($data->records as $record) {
-			if (!isset($record->name) || !isset($record->type) || !isset($record->priority || !isset($record->content)) ) {
+			if (!isset($record->name) || !isset($record->type) || !isset($record->priority) || !isset($record->content)) {
 				continue;
 			}
 
