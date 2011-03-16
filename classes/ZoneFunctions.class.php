@@ -372,17 +372,18 @@ class ZoneFunctions {
 
 		$parameters = array();
 		$query = "UPDATE `%s` SET ";
+		$q = array();
 
 		if (isset($data->name)) {
-			$query .= "name = :name ";
+			$q[] = "name = :name";
 			$parameters[":name"] = $data->name;
 		}
 		if (isset($data->master)) {
-			$query .= "master = :master ";
+			$q[] = "master = :master";
 			$parameters[":master"] = $data->master;
 		}
 		if (isset($data->type)) {
-			$query .= "type = :type ";
+			$q[] = "type = :type";
 			$parameters[":type"] = $data->type;
 		}
 
@@ -393,6 +394,7 @@ class ZoneFunctions {
 			return $response;
 		}
 
+		$query .= implode(", ", $q);
 		$query .= "WHERE name = :identifier";
 		$parameters[":identifier"] = $identifier;
 
