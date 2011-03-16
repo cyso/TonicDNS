@@ -185,10 +185,17 @@ class ZoneValidator extends Validator {
 		$errors = array();
 		foreach ($templates as $entry) {
 			$template = new TemplateValidator();
-			$template->identifier = $entry;
+			if ($entry instanceof stdClass) {
+				if (!isset($entry->identifier)) {
+					$errors[] = "Zone template identifier was not set.";
+				}
+				$template->identifier = $entry->identifier;
+			} else {
+				$template->identifier = $entry;
+			}
 
 			if (!$template->validates()) {
-				$errors[] = $template->getFormattedErrors();
+				$errors[] = $template->getFormattedErrors(true);
 			}
 		}
 

@@ -159,7 +159,7 @@ class ZoneFunctions {
 		$records = array();
 		if (isset($data->templates) && !empty($data->templates)) {
 			foreach ($data->templates as $template) {
-				$response = TemplateFunctions::get_template($response, $template, $p);
+				$response = TemplateFunctions::get_template($response, $template->identifier, $p);
 
 				if (empty($p)) {
 					continue;
