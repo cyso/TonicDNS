@@ -25,7 +25,8 @@ class RecordResource extends TokenResource {
 			return $response;
 		}
 
-		$validator = new RecordValidator($data);
+		$validator = new RecordValidator();
+		$validator->initialize($data);
 
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
