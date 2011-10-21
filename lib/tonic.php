@@ -1,5 +1,25 @@
 <?php
-
+/**
+ * Copyright (c) 2011 Cyso Managed Hosting < development [at] cyso . nl >
+ * Copyright (c) 2009 Paul James
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 /**
  * Model the data of the incoming HTTP request
  * @namespace Tonic\Lib
@@ -59,29 +79,28 @@ class Request {
      * @var str[]
      */
     public $mimetypes = array(
-            'html' => 'text/html',
-            'txt' => 'text/plain',
-            'php' => 'application/php',
-            'css' => 'text/css',
-            'js' => 'application/javascript',
-            'json' => 'application/json',
-            'xml' => 'text/xml',
-            'rss' => 'application/rss+xml',
-            'atom' => 'application/atom+xml',
-            'gz' => 'application/x-gzip',
-            'tar' => 'application/x-tar',
-            'zip' => 'application/zip',
-            'gif' => 'image/gif',
-            'png' => 'image/png',
-            'jpg' => 'image/jpeg',
-            'ico' => 'image/x-icon',
-            'swf' => 'application/x-shockwave-flash',
-            'flv' => 'video/x-flv',
-            'avi' => 'video/mpeg',
-            'mpeg' => 'video/mpeg',
-            'mpg' => 'video/mpeg',
-            'mov' => 'video/quicktime',
-            'mp3' => 'audio/mpeg'
+            'text/html' => 'html',
+            'text/plain' => 'txt',
+            'application/php' => 'php',
+            'text/css' => 'css',
+            'application/javascript' => 'js',
+            'application/json' => 'json',
+            'text/xml' => 'xml',
+            'application/xml' => 'xml',
+            'application/rss+xml' => 'rss',
+            'application/atom+xml' => 'atom',
+            'application/x-gzip' => 'gz',
+            'application/x-tar' => 'tar',
+            'application/zip' => 'zip',
+            'image/gif' => 'gif',
+            'image/png' => 'png',
+            'image/jpeg' => 'jpg',
+            'image/x-icon' => 'ico',
+            'application/x-shockwave-flash' => 'swf',
+            'video/x-flv' => 'flv',
+            'video/mpeg' => 'mpeg',
+            'video/quicktime' => 'mov',
+            'audio/mpeg' => 'mp3'
         );
         
     /**
@@ -194,8 +213,8 @@ class Request {
         $config['ifNoneMatch'] = $this->getConfig($config, 'ifNoneMatch', 'HTTP_IF_NONE_MATCH');
         
         if (isset($config['mimetypes']) && is_array($config['mimetypes'])) {
-            foreach ($config['mimetypes'] as $ext => $mimetype) {
-                $this->mimetypes[$ext] = $mimetype;
+            foreach ($config['mimetypes'] as $mimetype => $ext) {
+                $this->mimetypes[$mimetype] = $ext;
             }
         }
         
@@ -215,9 +234,13 @@ class Request {
         }
         
         array_shift($parts);
-        foreach ($parts as $part) {
-            $this->accept[10][] = $part;
-            $this->acceptLang[10][] = $part;
+		foreach ($parts as $part) {
+            if (array_search($part, $this->mimetypes)) {
+                $this->accept[10][] = $part;
+                $this->acceptLang[10][] = $part;
+            } else {
+                $this->uri .= "." . $part;
+            }
         }
         
         // sort accept headers
@@ -229,9 +252,8 @@ class Request {
             } else {
                 $num = 10;
             }
-            $key = array_search($parts[0], $this->mimetypes);
-            if ($key) {
-                $this->accept[$num][] = $key;
+            if (array_key_exists($parts[0], $this->mimetypes)) {
+                $this->accept[$num][] = $this->mimetypes[$parts[0]];
             }
         }
         krsort($this->accept);
@@ -534,7 +556,7 @@ class Request {
             }
             return new $resource['class']($parameters);
         }
-        return new $this->noResource();
+        return new $this->noResource(array());
         
     }
     
@@ -561,7 +583,85 @@ class Request {
         }
         return in_array($etag, $this->ifNoneMatch);
     }
-    
+
+    /**
+     * Returns a parsed version of the request data.
+     * @return mixed Parsed data, or null on error.
+     */
+    function parseData() {
+        if ($this->method === "GET") {
+            parse_str($this->queryString, $data);
+            return json_decode(json_encode($data));
+        }
+
+        $type = null;
+        if (isset($this->requestType)) {
+            preg_match("/^([\w]+\/[\w]+)(?:;.*)?$/", $this->requestType, $r);
+            if (is_array($r)) {
+                $this->requestType = $r[1];
+            }
+            switch($this->requestType) {
+            case "application/xml":
+            case "text/xml":
+                $type = "xml";
+                break;
+            case "application/json":
+            case "text/json":
+                $type = "json";
+                break;
+            default:
+                $type = null;
+                break;
+            }
+        }
+
+        if ($type == null) {
+            if (preg_match("#<([a-z_:][a-z]*(\s+[a-z_:][a-z]*\s*=\s*(\"[^\"]*\"|'[^']*'))*|/[a-z_:][a-z]*)\s*>#", $this->data)) {
+                $type = "xml";
+            } else if (preg_match("#^(\"(\.|[^\"\\\n\r])*?\"|[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t])+?$#", $this->data)) {
+                $type = "json";
+            }
+        }
+
+        if ($type == null) {
+            return null;
+        }
+
+        $data = null;
+        switch ($type) {
+        case "xml":
+            $data = simplexml_load_string($this->data, null, LIBXML_NOBLANKS | LIBXML_NOEMPTYTAG | LIBXML_NOWARNING | LIBXML_NOERROR | LIBXML_NOENT);
+            $data = $this->sanitizeXMLObject($data);
+            break;
+        case "json":
+            $data = json_decode($this->data);
+            break;
+        }
+
+
+        if (!is_object($data)) {
+            return null;
+        } else {
+            return $data;
+        }
+    }
+
+    private function sanitizeXMLObject($object) {
+        $object = unserialize(preg_replace("/(^|;)*O:[0-9]+:\"[^\"]+\":/i","\\1"."O:" . strlen('stdClass').":\"stdClass\":", serialize($object)));
+        $copy = clone $object;
+
+        foreach($object as $k => $child) {
+            if (isset($child->item)) {
+                if (is_array($child->item)) {
+                    $copy->{$k} = $child->item;
+                } else {
+                    $copy->{$k} = array($child->item);
+                }
+            }
+        }
+
+        return $copy;
+    }
 }
 
 /**
@@ -570,13 +670,13 @@ class Request {
  */
 class Resource {
     
-    protected $parameters = array();
+    protected $parameters;
     
     /**
      * Resource constructor
      * @param str[] parameters Parameters passed in from the URL as matched from the URI regex
      */
-    function  __construct($parameters = array()) {
+    function  __construct($parameters) {
         $this->parameters = $parameters;
     }
     
@@ -705,7 +805,7 @@ class Response {
      * The request object generating this response
      * @var Request
      */
-    private $request;
+    protected $request;
     
     /**
      * The HTTP response code to send

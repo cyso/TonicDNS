@@ -1,16 +1,72 @@
 <?php
 /**
+ * Copyright (c) 2011 Cyso Managed Hosting < development [at] cyso . nl >
+ *
+ * This file is part of TonicDNS.
+ *
+ * TonicDNS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * TonicDNS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
+ */
+/**
  * Authentication Resource.
  * @uri /authenticate
+ * @uri /authenticate/:token
  * @uri /authentication
+ * @uri /authentication/:token
  */
-class AuthenticationResource extends Resource {
+class AuthenticationResource extends AnonymousResource {
+	private $backend = null;
+
+	/**
+	 * Resource constructor
+	 * @param str[] parameters Parameters passed in from the URL as matched from the URI regex
+	 */
+	function  __construct($parameters) {
+		parent::__construct($parameters);
+
+		try {
+			switch (PowerDnsConfig::TOKEN_BACKEND) {
+			case "PDO":
+				$this->backend = new PDOTokenBackend();
+				break;
+			default:
+				$this->backend = new SqliteTokenBackend();
+				break;
+			}
+		} catch (Exception $e) {
+			trigger_error($e->message, E_USER_ERROR);
+		}
+	}
+
+
 	/**
 	 * Corresponds to login.
 	 *
+	 * Request:
+	 *
 	 * {
 	 * 	"username": <username>,
-	 * 	"password": <password>
+	 * 	"password": <password>,
+	 * 	"local_user": <username>
+	 * }
+	 *
+	 * Response:
+	 *
+	 * {
+	 *      "username": <string>,
+	 *      "valid_until": <int>,
+	 *      "hash": <string>,
+	 *      "token": <string>
 	 * }
 	 *
 	 * @access public
@@ -18,36 +74,44 @@ class AuthenticationResource extends Resource {
 	 * @return Response Authentication Token if successful, error message if false.
 	 */
 	public function put($request) {
-		$response = new Response($request);
-		$body = $request->data;
-		$json = json_decode($body);
+		$response = new FormattedResponse($request);
+		$data = $request->parseData();
 
-		if ($json == null) {
+		if ($data == null) {
 			$response->code = Response::BADREQUEST;
-			$response->body = json_encode("Request body was malformed. Ensure the body is in valid JSON format.");
+			$response->error = "Request body was malformed. Ensure the body is in valid format.";
 			return $response;
 		}
 
-		if (!isset($json->username) || !isset($json->password)) {
+		if (!isset($data->username) || !isset($data->password)) {
 			$response->code = Response::BADREQUEST;
-			$response->body = json_encode("Username and/or password was missing or invalid. Ensure that the body is in valid JSON format and all required parameters are present.");
+			$response->error = "Username and/or password was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			return $response;
+		}
+
+		$validator = new AuthenticationValidator($data);
+
+		if (!$validator->validates()) {
+			$response->code = Response::BADREQUEST;
+			$response->error = $validator->getFormattedErrors();
 			return $response;
 		}
 
 		$token = new Token();
-		$token->username = $json->username;
-		$token->password = $json->password;
+		$token->username = $data->username;
+		$token->password = $data->password;
 
-		$backend = new SqliteTokenBackend();
-		$token = $backend->createToken($token);
+		$token = $this->backend->createToken($token);
 
 		if ($token == null) {
 			$response->code = Response::FORBIDDEN;
-			$response->body = json_encode("Username and/or password was invalid.");
+			$response->error = "Username and/or password was invalid.";
 			return $response;
 		}
 
-		$response->body = json_encode($token);
+		$response->code = Response::OK;
+		$response->body = $token->toArray();
+		$response->log_message = "Token was successfully created.";
 
 		return $response;
 	}
@@ -56,41 +120,44 @@ class AuthenticationResource extends Resource {
 	 * Corresponds to session validation. If the session is valid, the duration is refreshed. If it is 
 	 * not, but it does exist, it will be destroyed.
 	 *
-	 * {
-	 * 	"token": <token>
-	 * }
+	 * Response:
+	 *
+	 * true
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
-	 * @return Response True if session is still valid, false otherwise.
+	 * @return Response True if session is still valid, error message otherwise.
 	 */
-	public function post($request) {
-		$response = new Response($request);
-		$body = $request->data;
-		$json = json_decode($body);
+	public function post($request, $token = null) {
+		$response = new FormattedResponse($request);
+		$data = $request->parseData();
 
-		if ($json == null) {
+		if (empty($token)) {
 			$response->code = Response::BADREQUEST;
-			$response->body = json_encode("Request body was malformed. Ensure the body is in valid JSON format.");
+			$response->error = "Token was missing or invalid.";
 			return $response;
 		}
 
-		if (!isset($json->token)) {
+		$validator = new AuthenticationValidator();
+		$validator->token = $token;
+
+		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
-			$response->body = json_encode("Token was missing or invalid. Ensure that the body is in valid JSON format and all required parameters are present.");
+			$response->error = $validator->getFormattedErrors();
 			return $response;
 		}
 
-		$backend = new SqliteTokenBackend();
-		$token = $backend->refreshToken($json->token);
+		$t = $this->backend->refreshToken($token);
 
-		if ($token == null) {
+		if ($t == null) {
 			$response->code = Response::FORBIDDEN;
-			$response->body = json_encode("Token was invalid.");
+			$response->error = "Token was invalid.";
 			return $response;
 		}
 
-		$response->body = json_encode(true);
+		$response->code = Response::OK;
+		$response->body = true;
+		$response->log_message = "Token was successfully validated.";
 
 		return $response;
 	}
@@ -98,47 +165,50 @@ class AuthenticationResource extends Resource {
 	/**
 	 * Corresponds to session logout.
 	 *
-	 * {
-	 * 	"token": <token>
-	 * }
+	 * Response:
+	 *
+	 * true
 	 *
 	 * @access public
 	 * @params mixed $request Request parameters
-	 * @return Response True if session was terminated, false otherwise.
+	 * @return Response True if session was terminated, error message otherwise.
 	 */
-	public function delete($request) {
-		$response = new Response($request);
-		$body = $request->data;
-		$json = json_decode($body);
+	public function delete($request, $token = null) {
+		$response = new FormattedResponse($request);
+		$data = $request->parseData();
 
-		if ($json == null) {
+		if (!isset($token)) {
 			$response->code = Response::BADREQUEST;
-			$response->body = json_encode("Request body was malformed. Ensure the body is in valid JSON format.");
+			$response->error = "Token was missing or invalid.";
 			return $response;
 		}
 
-		if (!isset($json->token)) {
+		$validator = new AuthenticationValidator();
+		$validator->token = $token;
+
+		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
-			$response->body = json_encode("Token was missing or invalid. Ensure that the body is in valid JSON format and all required parameters are present.");
+			$response->error = $validator->getFormattedErrors();
 			return $response;
 		}
 
-		$backend = new SqliteTokenBackend();
-		$token = $backend->retrieveToken($json->token);
+		$t = $this->backend->retrieveToken($token);
 
-		if ($token == null) {
+		if ($t == null) {
 			$response->code = Response::FORBIDDEN;
-			$response->body = json_encode("Token was invalid.");
+			$response->body = array("error" => "Token was invalid.");
 			return $response;
 		}
 
-		if (!$backend->destroyToken($token)) {
+		if (!$this->backend->destroyToken($t)) {
 			$response->code = Response::INTERNALSERVERERROR;
-			$response->body = json_encode("Token could not be destroyed.");
+			$response->body = array("error" => "Token could not be destroyed.");
 			return $response;
 		}
 
-		$response->body = json_encode(true);
+		$response->code = Response::OK;
+		$response->body = true;
+		$response->log_message = "Token was successfully invalidated.";
 
 		return $response;
 	}

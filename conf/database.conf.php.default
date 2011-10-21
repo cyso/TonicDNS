@@ -1,7 +1,6 @@
 <?php
 /**
  * Copyright (c) 2011 Cyso Managed Hosting < development [at] cyso . nl >
- * Copyright (c) 2009 Paul James
  *
  * This file is part of TonicDNS.
  *
@@ -18,34 +17,38 @@
  * You should have received a copy of the GNU General Public License
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
  */
+class PowerDnsConfig {
+	/**
+	 * DSN of the PowerDNS master database
+	 */
+	const DB_DSN = "mysql:dbname=powerdns;host=localhost";
+	/**
+	 * Credentials for database user
+	 */
+	const DB_USER = "";
+	const DB_PASS = "";
 
-// load Tonic library
-require_once '../lib/tonic.php';
+	/**
+	 * Relevant table names
+	 */
+	const DB_TEMPLATE_TABLE = "zone_templ";
+	const DB_TEMPLATE_RECORDS_TABLE = "zone_templ_records";
+	const DB_ZONE_TABLE = "domains";
+	const DB_RECORD_TABLE = "records";
+	const DB_USER_TABLE = "users";
+	const DB_TOKEN_TABLE = "tokens";
 
-// load all config files
-$configs = glob("../conf/*.php");
-foreach ($configs as $config) {
-	require_once $config;
+	/**
+	 * Default DNS settings
+	 */
+	const DNS_DEFAULT_RECORD_TTL = 86400;
+	const DNS_DEFAULT_RECORD_PRIORITY = 0;
+
+	/**
+	 * Default Token settings
+	 */
+	const TOKEN_BACKEND = "PDO";
+	const TOKEN_DEFAULT_DURATION = 60;
+	const TOKEN_SECRET = "";
 }
-
-// load all other libraries
-$libraries = glob("../lib/*.php");
-foreach ($libraries as $library) {
-	// load library
-	require_once $library;
-}
-
-// load classes
-$classes = glob("../classes/*.class.php");
-foreach ($classes as $class) {
-	// load class
-	require_once $class;
-}
-
-// handle request
-$request = new Request();
-$resource = $request->loadResource();
-$response = $resource->exec($request);
-$response->output();
-
 ?>

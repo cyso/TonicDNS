@@ -19,33 +19,39 @@ require_once "token_backend.php";
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * Implements the TokenBackend interface using and SQLite database backend. This class will throw exceptions.
+ * Implements the TokenBackend interface using PDO. This class will throw exceptions.
  *
- * This backend expects an SQLite3 database with the following structure:
+ * This class will use the connection string and credentials from the database.config.php
+ * file in /conf.
  *
- * CREATE TABLE "tokens" (
- * 	"token_hash" TEXT PRIMARY KEY NOT NULL UNIQUE ,
- * 	"token_valid_until" INTEGER NOT NULL ,
- * 	"token_user_id" INTEGER NOT NULL
- * );
- * CREATE TABLE "users" (
- * 	"user_id" INTEGER PRIMARY KEY NOT NULL UNIQUE ,
- * 	"username" TEXT NOT NULL UNIQUE ,
- * 	"password" TEXT NOT NULL
- * );
-
- * The database should be available in the /db dir, relative to the root of the Tonic dir.
+ * This backend expects a database with the following structure, compatible with PowerAdmin:
+ *
+ * CREATE TABLE `tokens` (
+ *   `token_hash` varchar(40) NOT NULL,
+ *   `token_valid_until` int(11) NOT NULL,
+ *   `token_user_id` int(11) NOT NULL,
+ *   PRIMARY KEY (`token_hash`),
+ *   KEY `token_user_id` (`token_user_id`)
+ * ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+ *
+ * CREATE TABLE `users` (
+ *   `id` int(11) NOT NULL AUTO_INCREMENT,
+ *   `username` varchar(16) NOT NULL,
+ *   `password` varchar(34) NOT NULL,
+ *   `fullname` varchar(255) NOT NULL,
+ *   `email` varchar(255) NOT NULL,
+ *   `description` varchar(1024) NOT NULL,
+ *   `perm_templ` tinyint(4) NOT NULL DEFAULT '0',
+ *   `active` tinyint(4) NOT NULL DEFAULT '0',
+ *   PRIMARY KEY (`id`)
+ * ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+ *
+ * ALTER TABLE `tokens`
+ *   ADD CONSTRAINT `tokens_ibfk_1` FOREIGN KEY (`token_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
  *
  * @namespace Token\Lib
  */
-class SqliteTokenBackend implements TokenBackend {
-	/**
-	 * SQLite database location
-	 * @access private
-	 * @var string
-	 */
-	private $database_location = "../db/tokens.sqlite";
-
+class PDOTokenBackend implements TokenBackend {
 	/**
 	 * SQLite database connection
 	 * @access private
@@ -54,27 +60,13 @@ class SqliteTokenBackend implements TokenBackend {
 	private $connection = null;
 
 	/**
-	 * Token secret, used as a HMAC key while generating the Token hash.
-	 * @access private
-	 * @var string
-	 */
-	private $secret = "theix8rameijah5bohqu6rohL5Lah6zaidai5aepheekezooroung4RiweiP";
-
-	/**
-	 * Default duration for a new Token.
-	 * @access private
-	 * @var integer
-	 */
-	private $duration = 60;
-
-	/**
-	 * Constructs a new SqliteTokenBackend, and connects to the SQLite database. Throws an Exception on error.
+	 * Constructs a new PDOTokenBackend, and connects to the database. Throws an Exception on error.
 	 * a database connection could not be established.
 	 * @access public
 	 */
 	public function __construct() {
 		try {
-			$this->connection = new PDO("sqlite:" . $this->database_location);
+			$this->connection = new PDO(PowerDnsConfig::DB_DSN, PowerDnsConfig::DB_USER, PowerDnsConfig::DB_PASS);
 		} catch (Exception $e) {
 			throw new Exception("Failed to open database connection");
 		}
@@ -93,24 +85,36 @@ class SqliteTokenBackend implements TokenBackend {
 		if (empty($token->username) || empty($token->password)) {
 			return null;
 		}
-		if (($result = $this->connection->query(sprintf("SELECT user_id FROM users WHERE username = '%s' AND password = '%s' LIMIT 1;", sqlite_escape_string($token->username), sha1($token->password)))) !== false) {
-			$results = $result->fetchAll(PDO::FETCH_ASSOC);
+		$stat1 = $this->connection->prepare(sprintf(
+			"SELECT id FROM `%s` WHERE username = :username AND password = :password LIMIT 1;", PowerDnsConfig::DB_USER_TABLE
+		));
+		if (($result = $stat1->execute(array(":username" => $token->username, ":password" => md5($token->password)))) !== false) {
+			$results = $stat1->fetchAll(PDO::FETCH_ASSOC);
 			if (count($results) != 1) {
 				return null;
 			}
 			$user = $results[0];
-			$token->valid_until = strtotime(sprintf("+%d second", $this->duration));
-			$token->hash = hash_hmac("sha1", sprintf("%s:%s", sqlite_escape_string($token->username), $token->password), $this->secret);
+			$token->valid_until = strtotime(sprintf("+%d second", PowerDnsConfig::TOKEN_DEFAULT_DURATION));
+			$token->valid_duration = PowerDnsConfig::TOKEN_DEFAULT_DURATION;
+			$token->hash = hash_hmac("sha1", sprintf("%s:%s", $token->username, $token->password), PowerDnsConfig::TOKEN_SECRET);
 
 			if ($this->refreshToken($token->hash) !== false) {
 				unset($token->password);
 				return $token;
 			}
+			$stat1->closeCursor();
 
-			$r = $this->connection->exec(sprintf("INSERT INTO tokens (token_hash, token_valid_until, token_user_id) VALUES ('%s', '%s', %d);", $token->hash, $token->valid_until, $user['user_id']));
-			if ($r === false || $r !== 1) {
+			$this->connection->beginTransaction();
+
+			$stat2 = $this->connection->prepare(sprintf(
+				"INSERT INTO `%s` (token_hash, token_valid_until, token_user_id) VALUES (:hash, :valid, :user);", PowerDnsConfig::DB_TOKEN_TABLE
+			));
+			$r = $stat2->execute(array(":hash" => $token->hash, ":valid" => $token->valid_until, ":user" => $user['id']));
+			if ($r === false || $stat2->rowCount() !== 1) {
+				$this->connection->rollback();
 				return null;
 			} else {
+				$this->connection->commit();
 				unset($token->password);
 				return $token;
 			}
@@ -126,11 +130,13 @@ class SqliteTokenBackend implements TokenBackend {
 	 * @return mixed Token object, or null if it could not be retrieved.
 	 */
 	public function retrieveToken($token_id) {
-		$tokens = $this->connection->query(sprintf("SELECT token_hash, token_valid_until, username FROM tokens INNER JOIN users ON (token_user_id = user_id) WHERE token_hash = '%s' LIMIT 1;", sqlite_escape_string($token_id)));
-		if ($tokens === false) {
+		$stat = $this->connection->prepare(sprintf(
+			"SELECT token_hash, token_valid_until, username FROM `%s` INNER JOIN `%s` ON (token_user_id = id) WHERE token_hash = :hash LIMIT 1;", PowerDnsConfig::DB_TOKEN_TABLE, PowerDnsConfig::DB_USER_TABLE
+		));
+		if ($stat->execute(array(":hash" => $token_id)) === false) {
 			return null;
 		}
-		$t = $tokens->fetch(PDO::FETCH_ASSOC);
+		$t = $stat->fetch(PDO::FETCH_ASSOC);
 		if ($t === false) {
 			return null;
 		}
@@ -170,9 +176,15 @@ class SqliteTokenBackend implements TokenBackend {
 			if (!$refresh) {
 				return true;
 			} else {
-				if (!$this->connection->exec(sprintf("UPDATE tokens SET token_valid_until = %d WHERE token_hash = '%s';", strtotime(sprintf("+%d second", $this->duration)), $token->hash))) {
+				$this->connection->beginTransaction();
+				$stat = $this->connection->prepare(sprintf(
+					"UPDATE `%s` SET token_valid_until = :valid WHERE token_hash = :hash;", PowerDnsConfig::DB_TOKEN_TABLE
+				));
+				if ($stat->execute(array(":valid" => strtotime(sprintf("+%d second", PowerDnsConfig::TOKEN_DEFAULT_DURATION)), ":hash" => $token->hash)) === false) {
+					$this->connection->rollback();
 					return false;
 				} else {
+					$this->connection->commit();
 					return true;
 				}
 			}
@@ -195,9 +207,16 @@ class SqliteTokenBackend implements TokenBackend {
 		if (empty($token->username) || empty($token->valid_until) || empty($token->hash)) {
 			return false;
 		}
-		if (!$this->connection->exec(sprintf("DELETE FROM tokens WHERE token_hash = '%s';", sqlite_escape_string($token->hash)))) {
+
+		$this->connection->beginTransaction();
+		$stat = $this->connection->prepare(sprintf(
+			"DELETE FROM `%s` WHERE token_hash = :hash;", PowerDnsConfig::DB_TOKEN_TABLE
+		));
+		if ($stat->execute(array(":hash" => $token->hash)) === false) {
+			$this->connection->rollback();
 			return false;
 		} else {
+			$this->connection->commit();
 			return true;
 		}
 	}

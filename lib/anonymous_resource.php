@@ -18,10 +18,10 @@
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * Token authentication enabled Resource
+ * Anonymous authentication resource
  * @namespace Tonic\Lib
  */
-class TokenResource extends Resource {
+class AnonymousResource extends Resource {
 	/**
 	 * Resource constructor
 	 * @param str[] parameters Parameters passed in from the URL as matched from the URI regex
@@ -40,59 +40,22 @@ class TokenResource extends Resource {
 		# good for debugging, remove this at some point
 		$response->addHeader('X-Resource', get_class($this));
 
-		$logger = new Logger($request->uri, $request->method, "Anonymous");
-		$logger->setInput(json_encode($request->parseData()));
+		$data = $request->parseData();
 
-		if (!isset($request->requestToken) || empty($request->requestToken)) {
-			$response->code = Response::UNAUTHORIZED;
-			$response->error = "Authorization required";
-			$response->addHeader('X-Debug', "No token supplied");
-			$logger->writeLog($response->error, $response->code);
-
-			return $response;
-		}
-
-		$backend = null;
-		try {
-			switch (PowerDnsConfig::TOKEN_BACKEND) {
-			case "PDO":
-				$backend = new PDOTokenBackend();
-				break;
-			default:
-				$backend = new SqliteTokenBackend();
-				break;
+		$logger = null;
+		if ($data !== null) {
+			if (isset($data->username) && !empty($data->username) && isset($data->local_user) && !empty($data->local_user)) {
+				$logger = new Logger($request->uri, $request->method, sprintf("%s -> %s", $data->local_user, $data->username));
+			} else if (isset($data->username) && !empty($data->username)) {
+				$logger = new Logger($request->uri, $request->method, sprintf("Anonymous -> %s", $data->username));
+			} else {
+				$logger = new Logger($request->uri, $request->method, "Anonymous");
 			}
-		} catch (Exception $e) {
-			$response->code = Response::INTERNALSERVERERROR;
-			$response->error = $e->getMessage();
-			$logger->writeLog($response->error, $response->code);
-
-			return $response;
+		} else {
+			$logger = new Logger($request->uri, $request->method, "Anonymous");
 		}
 
-		$token = $backend->retrieveToken($request->requestToken);
-
-		if ($token == null) {
-			$response->code = Response::FORBIDDEN;
-			$response->error = "Authentication failed";
-			$response->addHeader('X-Debug', "Token is null");
-			$logger->writeLog($response->error, $response->code);
-
-			return $response;
-		}
-
-		$logger->setUser($token->username);
-
-		if ($backend->validateToken($token) === false) {
-			$response->code = Response::FORBIDDEN;
-			$response->error = "Authentication failed";
-			$response->addHeader('X-Debug', "Token is invalid");
-			$logger->writeLog($response->error, $response->code);
-
-			return $response;
-		}
-
-		$backend->refreshToken($token->hash);
+		$logger->setInput(json_encode($data));
 
 		if (method_exists($this, $request->method)) {
 			$parameters = $this->parameters;
@@ -117,7 +80,7 @@ class TokenResource extends Resource {
 				$request->method,
 				$request->uri
 			);
-			$logger->writeLog($response->error, $response->code);
+			$logger->writeLog($response->error, $resonse->code);
 			return $response;
 		}
 

@@ -1,7 +1,6 @@
 <?php
 /**
  * Copyright (c) 2011 Cyso Managed Hosting < development [at] cyso . nl >
- * Copyright (c) 2009 Paul James
  *
  * This file is part of TonicDNS.
  *
@@ -18,34 +17,15 @@
  * You should have received a copy of the GNU General Public License
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
  */
+class ValidatorConfig {
+	/**
+	 * Debug mode enables stacktraces on initialization errors, and triggers an error when a parameter was set without an available validator rule.
+	 */
+	const DEBUG = false;
 
-// load Tonic library
-require_once '../lib/tonic.php';
-
-// load all config files
-$configs = glob("../conf/*.php");
-foreach ($configs as $config) {
-	require_once $config;
+	/**
+	 * Bind compatability determines if FQDNs may end with a dot (.).
+	 */
+	const BIND_COMPATABILITY = false;
 }
-
-// load all other libraries
-$libraries = glob("../lib/*.php");
-foreach ($libraries as $library) {
-	// load library
-	require_once $library;
-}
-
-// load classes
-$classes = glob("../classes/*.class.php");
-foreach ($classes as $class) {
-	// load class
-	require_once $class;
-}
-
-// handle request
-$request = new Request();
-$resource = $request->loadResource();
-$response = $resource->exec($request);
-$response->output();
-
 ?>
