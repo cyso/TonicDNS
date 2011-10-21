@@ -95,6 +95,7 @@ class PDOTokenBackend implements TokenBackend {
 			}
 			$user = $results[0];
 			$token->valid_until = strtotime(sprintf("+%d second", PowerDnsConfig::TOKEN_DEFAULT_DURATION));
+			$token->valid_duration = PowerDnsConfig::TOKEN_DEFAULT_DURATION;
 			$token->hash = hash_hmac("sha1", sprintf("%s:%s", $token->username, $token->password), PowerDnsConfig::TOKEN_SECRET);
 
 			if ($this->refreshToken($token->hash) !== false) {
