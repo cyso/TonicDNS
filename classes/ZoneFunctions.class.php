@@ -119,7 +119,8 @@ class ZoneFunctions {
 			 FROM `%s` z
 			 LEFT JOIN `%s` r ON (z.id = r.domain_id)
 			 WHERE z.name = :name
-			 ORDER BY r_name ASC,
+			 ORDER BY CAST(r_name AS UNSIGNED) ASC,
+			 r_name ASC,
 			 r_type DESC,
 			 r_prio ASC,
 			 r_content ASC;", PowerDNSConfig::DB_ZONE_TABLE, PowerDNSConfig::DB_RECORD_TABLE)
@@ -582,7 +583,7 @@ class ZoneFunctions {
 	}
 
 	private function ipv6_to_arpa($ip) {
-		$ip = ipv6_expand($ip);
+		$ip = ZoneFunctions::ipv6_expand($ip);
 
 		$p = explode(":", $ip);
 		$n = '';
