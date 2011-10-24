@@ -115,7 +115,7 @@ class ZoneValidator extends Validator {
 	protected $rules = array(
 		"identifier" => array(
 			"valid_identifier" => array(
-				"rule" => VALID_DOMAIN,
+				"rule" => array("check_valid_domain"),
 				"message" => "Identifier is not valid. Must be a valid FQDN."
 			)
 		),
@@ -168,6 +168,16 @@ class ZoneValidator extends Validator {
 			)
 		),
 	);
+
+	public function check_valid_domain($value) {
+		if (preg_match(VALID_DOMAIN, $value) ||
+			preg_match(VALID_IPV4, $value) ||
+			preg_match(VALID_IPV6, $value)) {
+				return true;
+			} else {
+				return false;
+			}
+	}
 
 	public function check_zone_type($value) {
 		if (!ctype_upper($value)) {
