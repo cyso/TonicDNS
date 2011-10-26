@@ -43,8 +43,18 @@ class TemplateResource extends TokenResource {
 	 *      },0..n
  	 * ]
 	 *
+	 * Errors (request without identifier):
+	 *
+	 *   500 - Failed to connect to database or query execution error.
+	 *
+	 * Errors (request with identifier):
+	 *
+	 *   500 - Failed to connect to database or query execution error.
+	 *   404 - Could not find template.
+	 *
 	 * @access public
 	 * @param mixed $request Request parameters
+	 * @param string $identifier Template identifier
 	 * @return Response DNS template data if successful, error message otherwise.
 	 */
 	public function get($request, $identifier = null) {
@@ -87,6 +97,12 @@ class TemplateResource extends TokenResource {
 	 * Response:
 	 *
 	 * true
+	 *
+	 * Errors:
+	 *
+	 *   508 - Invalid request, missing required parameters or input validation failed.
+	 *   500 - Failed to connect to database or query execution error.
+	 *   409 - Template already exists.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -140,8 +156,15 @@ class TemplateResource extends TokenResource {
 	 *
 	 * true
 	 *
+	 * Errors:
+	 *
+	 *   508 - Invalid request, missing required parameters or input validation failed.
+	 *   500 - Failed to connect to database or query execution error.
+	 *   404 - Could not find template.
+	 *
 	 * @access public
 	 * @param mixed $request Request parameters
+	 * @param string $identifier Template identifier
 	 * @return Response True if request was successful, error message otherwise.
 	 */
 	public function post($request, $identifier = null) {
@@ -176,8 +199,15 @@ class TemplateResource extends TokenResource {
 	 *
 	 * Response: true
 	 *
+	 * Errors:
+	 *
+	 *   508 - Invalid request, missing required parameters or input validation failed.
+	 *   500 - Failed to connect to database or query execution error.
+	 *   404 - Could not find template.
+	 *
 	 * @access public
-	 * @params mixed $request Request parameters
+	 * @param mixed $request Request parameters
+	 * @param string $identifier Template identifier
 	 * @return Response True if template was deleted, error message otherwise.
 	 */
 	public function delete($request, $identifier = null) {

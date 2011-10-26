@@ -121,7 +121,7 @@ class TemplateFunctions {
 		$response = TemplateFunctions::get_template($response, $data->identifier, $o);
 
 		if (!empty($o)) {
-			$response->code = Response::INTERNALSERVERERROR;
+			$response->code = Response::CONFLICT;
 			$response->error = "Resource already exists";
 			$out = false;
 			return $response;
@@ -192,7 +192,7 @@ class TemplateFunctions {
 
 		$response->code = Response::OK;
 		$response->body = true;
-		$response->log_message(sprintf("Template %s was created or modified with $d records.", $data->identifier, count($data->entries)));
+		$response->log_message = sprintf("Template %s was created or modified with %d records.", $data->identifier, count($data->entries));
 		$out = true;
 
 		return $response;
