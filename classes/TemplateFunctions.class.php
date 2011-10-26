@@ -192,7 +192,7 @@ class TemplateFunctions {
 
 		$response->code = Response::OK;
 		$response->body = true;
-		$response->log_message(sprintf("Template %s was created or modified with $d records.", $data->identifier, count($data->entries)));
+		$response->log_message = sprintf("Template %s was created or modified with %d records.", $data->identifier, count($data->entries));
 		$out = true;
 
 		return $response;
