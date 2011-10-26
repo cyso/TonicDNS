@@ -175,6 +175,10 @@ class ZoneFunctions {
 			$response->log_message = sprintf("Zone %s was not found.", $identifier);
 			$out = array();
 		} else {
+			if (!isset($output['records'])) {
+				$output['records'] = array();
+			}
+
 			$response->code = Response::OK;
 			$response->body = $output;
 			$response->log_message = sprintf("Zone %s with %d records was retrieved.", $identifier, count($output['records']));
