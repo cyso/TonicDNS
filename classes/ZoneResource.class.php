@@ -64,8 +64,20 @@ class ZoneResource extends TokenResource {
 	 *      },0..n ]
 	 * }
 	 *
+	 * Errors (request without identifier):
+	 *
+	 *   508 - Invalid request, missing required parameters or input validation failed.
+	 *   500 - Failed to connect to database or query execution error.
+	 *
+	 * Errors (request with identifier):
+	 *
+	 *   508 - Invalid request, missing required parameters or input validation failed.
+	 *   500 - Failed to connect to database or query execution error.
+	 *   404 - Could not find zone.
+	 *
 	 * @access public
 	 * @param mixed $request Request parameters
+	 * @param string $identifier Zone identifier
 	 * @return Response DNS zone data if successful, error message otherwise.
 	 */
 	public function get($request, $identifier = null) {
@@ -151,8 +163,21 @@ class ZoneResource extends TokenResource {
 	 *
 	 * true
 	 *
+	 * Errors (request without identifier):
+	 *
+	 *   508 - Invalid request, missing required parameters or input validation failed.
+	 *   500 - Failed to connect to database or query execution error.
+	 *   409 - Zone already exists.
+	 *
+	 * Errors (request with identifier):
+	 *
+	 *   508 - Invalid request, missing required parameters or input validation failed.
+	 *   500 - Failed to connect to database or query execution error.
+	 *   404 - Could not find zone.
+	 *
 	 * @access public
 	 * @param mixed $request Request parameters
+	 * @param string $identifier Zone identifier
 	 * @return Response True if request was successful, error message otherwise.
 	 */
 	public function put($request, $identifier = null) {
@@ -204,8 +229,15 @@ class ZoneResource extends TokenResource {
 	 *
 	 * true
 	 *
+	 * Errors (request with identifier):
+	 *
+	 *   508 - Invalid request, missing required parameters or input validation failed.
+	 *   500 - Failed to connect to database or query execution error.
+	 *   404 - Could not find zone.
+	 *
 	 * @access public
 	 * @param mixed $request Request parameters
+	 * @param string $identifier Zone identifier
 	 * @return Response True if request was successful, error message otherwise.
 	 */
 	public function post($request, $identifier = null) {
@@ -263,8 +295,21 @@ class ZoneResource extends TokenResource {
 	 *
 	 * true
 	 *
+	 * Errors (request without identifier):
+	 *
+	 *   508 - Invalid request, missing required parameters or input validation failed.
+	 *   500 - Failed to connect to database or query execution error.
+	 *   404 - Could not find zone.
+	 *
+	 * Errors (request with identifier):
+	 *
+	 *   508 - Invalid request, missing required parameters or input validation failed.
+	 *   500 - Failed to connect to database or query execution error.
+	 *   404 - Could not find zone.
+	 *
 	 * @access public
-	 * @params mixed $request Request parameters
+	 * @param mixed $request Request parameters
+	 * @param string $identifier Zone identifier
 	 * @return Response True if zone was deleted, error message otherwise.
 	 */
 	public function delete($request, $identifier = null) {

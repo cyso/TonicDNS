@@ -69,6 +69,11 @@ class AuthenticationResource extends AnonymousResource {
 	 *      "token": <string>
 	 * }
 	 *
+	 * Errors:
+	 *
+	 *   500 - Invalid request or missing username/password.
+	 *   403 - Username/password incorrect.
+	 *
 	 * @access public
 	 * @param mixed $request Request parameters
 	 * @return Response Authentication Token if successful, error message if false.
@@ -124,8 +129,14 @@ class AuthenticationResource extends AnonymousResource {
 	 *
 	 * true
 	 *
+	 * Errors:
+	 *
+	 *   500 - Missing or token with invalid format.
+	 *   403 - Invalid token.
+	 *
 	 * @access public
 	 * @param mixed $request Request parameters
+	 * @param string $token Authentication token
 	 * @return Response True if session is still valid, error message otherwise.
 	 */
 	public function post($request, $token = null) {
@@ -169,8 +180,15 @@ class AuthenticationResource extends AnonymousResource {
 	 *
 	 * true
 	 *
+	 * Errors:
+	 *
+	 *   500 - Missing or token with invalid format.
+	 *   500 - Could not destroy token.
+	 *   403 - Invalid token.
+	 *
 	 * @access public
-	 * @params mixed $request Request parameters
+	 * @param mixed $request Request parameters
+	 * @param string $token Authentication token
 	 * @return Response True if session was terminated, error message otherwise.
 	 */
 	public function delete($request, $token = null) {
