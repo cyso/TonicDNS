@@ -1,7 +1,7 @@
 TonicDNS RESTful API for PowerDNS
 =================================
 
-This a RESTful API for PowerDNS licensed under GPLv2. It uses the MIT licensed Tonic RESTful library as its base, see peej/tonic on GitHub. All changes to the core Tonic library are released under the original MIT lciense. See the files for the appropriate license.
+This a RESTful API for PowerDNS licensed under GPLv2. It uses the MIT licensed Tonic RESTful library as its base, see peej/tonic on GitHub. All changes to the core Tonic library are released under the original MIT license. See the files for the appropriate license.
 
 Features:
 
@@ -9,14 +9,18 @@ Features:
 * Option to store tokens in the PowerDNS database, or in a seperate SQLite database.
 * Should work with any PowerDNS backend database, tested with MySQL.
 * Supports adding of zones, records and zone and record templates.
-* Atomic commits, all modifications are validated on input and executed in a transaction.
+* Atomic commits, all modifications are validated on input and executed in a single transaction.
 
 Requirements:
 
-* Working PowerDNS 2.9 or 3.0 installation, with schemas similar to those found in the PowerDNS docs.
+* Working PowerDNS 2.9 or 3.0 installation, with database schemas similar to those found in the PowerDNS docs.
 * Apache 2.0 or 2.2 with your favorite method of PHP processing (has been tested with mod_php5 and mpm_itk/mpm_prefork).
 * Apache SSL and Rewrite module.
 * Appropriate php modules for the chosen backend. Optionally sqlite support if you choose to store tokens in a sqlite db.
+
+Tested with:
+
+* Ubuntu 10.04 LTS 64-bit with Apache 2.2.14, mod_php / PHP 5.3.2 and MySQL Server 5.1.41.
 
 Quick Install Guide
 ===================
@@ -34,7 +38,7 @@ Create a new VirtualHost in Apache. I recommend using mod_itk and using a sepera
 ```
 <VirtualHost *:80>
         ServerName      <hostname>
-		AssignUserId	tonicdns tonicdns
+        AssignUserId	tonicdns tonicdns
 
         RedirectPermanent / https://<hostname>
 
@@ -44,7 +48,7 @@ Create a new VirtualHost in Apache. I recommend using mod_itk and using a sepera
 
 <VirtualHost *:443>
         ServerName      <hostname>
-		AssignUserId	tonicdns tonicdns
+        AssignUserId	tonicdns tonicdns
 
         ErrorLog        <tonicdns location>/log/error.log
         CustomLog       <tonicdns location>/log/access.log combined
