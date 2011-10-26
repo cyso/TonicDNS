@@ -214,19 +214,23 @@ class Validator {
 	 * @return string Formatted string with error messages. If no error were generated, an empty string will be returned, even if $header was set to <pre>true</pre>.
 	 */
 	public function getFormattedErrors($header = true) {
-		$output = "";
+		$output = array();
 
 		foreach ($this->errors as $property => $errors) {
 			foreach ($errors as $error) {
-				$output .= $property . " - " . $error . "\n";
+				$output[] = $property . " - " . $error;
 			}
 		}
 
 		if (!empty($output) && $header === true) {
-			$output = "The following properties were invalid:\n" . $output;
+			array_unshift($output, "The following properties were invalid:");
 		}
 
-		return $output;
+		if (!empty($output)) {
+			return implode("\n", $output);
+		} else {
+			return $output;
+		}
 	}
 }
 
