@@ -188,7 +188,7 @@ class ZoneFunctions {
 		ZoneFunctions::get_zone($response, $data->name, $o, false);
 
 		if (!empty($o)) {
-			$response->code = Response::INTERNALSERVERERROR;
+			$response->code = Response::CONFLICT;
 			$response->error = "Resource already exists";
 			$out = false;
 			return $response;

@@ -121,7 +121,7 @@ class TemplateFunctions {
 		$response = TemplateFunctions::get_template($response, $data->identifier, $o);
 
 		if (!empty($o)) {
-			$response->code = Response::INTERNALSERVERERROR;
+			$response->code = Response::CONFLICT;
 			$response->error = "Resource already exists";
 			$out = false;
 			return $response;
