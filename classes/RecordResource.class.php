@@ -91,7 +91,7 @@ class RecordResource extends TokenResource {
 			}
 		}
 
-		if (isset($data->records) && is_array($data->entries)) {
+		if (isset($data->records) && is_array($data->records)) {
 			$output = array();
 			$i = 0;
 			foreach ($data->records as $d) {
