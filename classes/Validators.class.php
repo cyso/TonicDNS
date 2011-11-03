@@ -196,8 +196,8 @@ class ZoneValidator extends Validator {
 
 	public function check_zone_master($value) {
 		if (isset($this->type) && $this->type === "SLAVE") {
-			if (preg_match(VALID_IPV4, $value) === 0) {
-				return "Zone master is not valid. Type is set to SLAVE, but the master IP is not a valid IPv4 address.";
+			if (preg_match(VALID_IPV4, $value) === 0 && preg_match(VALID_IPV6, $value) === 0) {
+				return "Zone master is not valid. Type is set to SLAVE, but the master IP is not a valid IPv4 or IPv6 address.";
 			}
 		} else {
 			if (!empty($value)) {
@@ -319,12 +319,12 @@ class RecordValidator extends Validator {
 			} else {
 				return "Template record name is not valid. Must start with an alphanumeric character, and may only contain alphanumeric characters and dots (.). Must end in a valid tld or '[ZONE]'. May start with '*.' to indicate a wildcard domain.";
 			}
-		}
-
-		if (preg_match(VALID_RECORD_NAME, $content) === 1) {
-			return true;
 		} else {
-			return "Record name is not valid. Must start with an alphanumeric character, and may only contain alphanumeric characters and dots (.). Must end in a valid tld. May start with '*.' to indicate a wildcard domain.";
+			if (preg_match(VALID_RECORD_NAME, $content) === 1) {
+				return true;
+			} else {
+				return "Record name is not valid. Must start with an alphanumeric character, and may only contain alphanumeric characters and dots (.). Must end in a valid tld. May start with '*.' to indicate a wildcard domain.";
+			}
 		}
 	}
 
@@ -416,8 +416,8 @@ class RecordValidator extends Validator {
 			for ($i = 0; $i < count($parts); $i++) {
 				switch ($i) {
 				case 0:
-					if (preg_match(VALID_DOMAIN, $parts[$i]) === 0 && $parts[$i] !== "default-soa-name") {
-						return $prefix . "A SOA record must provide a valid FQDN or 'default-soa-name' as primary hostname.";
+					if (preg_match(VALID_DOMAIN, $parts[$i]) === 0) {
+						return $prefix . "A SOA record must provide a valid FQDN as primary hostname.";
 					}
 					break;
 				case 1:
