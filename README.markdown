@@ -25,7 +25,7 @@ Tested with:
 Quick Install Guide
 ===================
 
-This installation assumes you already have a working PowerDNS 2.9 or 3.0 installation.
+This installation assumes you already have a working PowerDNS 2.9 or 3.0 installation. This guide also assumes that you use MySQL for both PowerDNS and the users/tokens for TonicDNS. For the relevant SQL table structures, see db/tables.sql.
 
 Clone the repo.
 
