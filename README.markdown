@@ -1,3 +1,5 @@
+![TonicDNS Logo](http://github.com/Cysource/TonicDNS/raw/master/tonic_dns_logo.png)
+
 TonicDNS RESTful API for PowerDNS
 =================================
 
