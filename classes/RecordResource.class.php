@@ -23,11 +23,36 @@
  */
 class RecordResource extends TokenResource {
 	/**
-	 * Validates a single record.
+	 * Validates a set of records.
+	 *
+	 * Request:
+	 *
+	 * {
+	 * 		entries: [ {
+	 *              "name": <string>,
+	 *              "type": <string>,
+	 *              "content": <string>,
+	 *              "ttl": <int optional>,
+	 *              "priority: <int optional>,
+	 *              "change_date": <int optional>
+	 *      },0..n ],
+	 * 		records: [ {
+	 *              "name": <string>,
+	 *              "type": <string>,
+	 *              "content": <string>,
+	 *              "ttl": <int optional>,
+	 *              "priority: <int optional>,
+	 *              "change_date": <int optional>
+	 *      },0..n ]
+	 * }
 	 *
 	 * Response:
 	 *
 	 * true
+	 *
+	 * Errors:
+	 *
+	 * 508 - Invalid request, missing required parameters or input validation failed.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -37,24 +62,64 @@ class RecordResource extends TokenResource {
 		$response = new FormattedResponse($request);
 		$data = $request->parseData();
 
-		if (empty($data)) {
+		if (empty($data) || (!isset($data->entries) && !isset($data->records))) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure that all mandatory properties have been set.";
 			return $response;
 		}
 
-		$validator = new RecordValidator();
-		$validator->initialize($data);
 
-		if (!$validator->validates()) {
-			$response->code = Response::BADREQUEST;
-			$response->error = $validator->getFormattedErrors();
-			return $response;
+		if (isset($data->entries) && is_array($data->entries)) {
+			$output = array();
+			$i = 0;
+			foreach ($data->entries as $d) {
+				$i++;
+				if (!isset($d->name) || !isset($d->type) || !isset($d->content)) {
+					$output[] = sprintf("Missing required parameters in entry %d", $i);
+					continue;
+				}
+
+				$validator = new RecordValidator();
+				$validator->initialize($d);
+				$validator->record_type = "TEMPLATE";
+
+				if (!$validator->validates()) {
+					$output[] = sprintf("Validation errors in entry %d:", $i);
+					$output[] = $validator->getFormattedErrors(false);
+				}
+				continue;
+			}
 		}
 
-		$response->code = Response::OK;
-		$response->body = true;
-		$response->log_message = "Record was successfully validated.";
+		if (isset($data->records) && is_array($data->records)) {
+			$output = array();
+			$i = 0;
+			foreach ($data->records as $d) {
+				$i++;
+				if (!isset($d->name) || !isset($d->type) || !isset($d->content)) {
+					$output[] = sprintf("Missing required parameters in record %d", $i);
+					continue;
+				}
+
+				$validator = new RecordValidator();
+				$validator->initialize($d);
+
+				if (!$validator->validates()) {
+					$output[] = sprintf("Validation errors in record %d:", $i);
+					$output[] = $validator->getFormattedErrors(false);
+				}
+				continue;
+			}
+		}
+
+		if (empty($output)) {
+			$response->code = Response::OK;
+			$response->body = true;
+			$response->log_message = "Records were successfully validated.";
+		} else {
+			$response->code = Response::BADREQUEST;
+			$response->error = implode("\n", $output);
+		}
 
 		return $response;
 	}

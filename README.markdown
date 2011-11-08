@@ -1,7 +1,9 @@
+![TonicDNS Logo](http://github.com/Cysource/TonicDNS/raw/master/tonic_dns_logo.png)
+
 TonicDNS RESTful API for PowerDNS
 =================================
 
-This a RESTful API for PowerDNS licensed under GPLv2. It uses the MIT licensed Tonic RESTful library as its base, see peej/tonic on GitHub. All changes to the core Tonic library are released under the original MIT license. See the files for the appropriate license.
+This a RESTful API for PowerDNS licensed under GPL. It uses the MIT licensed Tonic RESTful library as its base, see peej/tonic on GitHub. All changes to the core Tonic library are released under the original MIT license. See the files for the appropriate license.
 
 Features:
 
@@ -25,7 +27,7 @@ Tested with:
 Quick Install Guide
 ===================
 
-This installation assumes you already have a working PowerDNS 2.9 or 3.0 installation.
+This installation assumes you already have a working PowerDNS 2.9 or 3.0 installation. This guide also assumes that you use MySQL for both PowerDNS and the users/tokens for TonicDNS. For the relevant SQL table structures, see db/tables.sql.
 
 Clone the repo.
 

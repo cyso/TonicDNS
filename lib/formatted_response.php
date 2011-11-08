@@ -44,7 +44,7 @@ class FormattedResponse extends Response {
 	 */
 	function __toString() {
 		$str = parent::__toString();
-		$str .= "\n\n" . $body;
+		$str .= "\n\n" . $this->body;
 		return $str;
 	}
 

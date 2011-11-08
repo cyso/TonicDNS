@@ -639,7 +639,7 @@ class Request {
         }
 
 
-        if (!is_object($data)) {
+        if (is_null($data)) {
             return null;
         } else {
             return $data;
