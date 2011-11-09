@@ -62,4 +62,22 @@ class HelperFunctions {
 
 		return implode(".", $parts);
 	}
+
+	public function calc_ipv4_range($in) {
+		$p = explode("/", $in);
+		$bits = $p[1];
+		$oct = explode(".", $p[0]);
+
+		$addr = ($oct[0] << 24) | ($oct[1] << 16) | ($oct[2] << 8) | $oct[3];
+		$mask = ($bits == 0) ? 0 : (~0 << (32 - $bits));
+
+		$min = ($addr & $mask);
+		$max = ($addr | (~$mask & 0xFFFFFFFF));
+
+		return array(
+			'min' => sprintf("%d.%d.%d.%d", ($min>>24) & 0xff, ($min>>16) & 0xff, ($min>>8) & 0xff, $min & 0xff),
+			'max' => sprintf("%d.%d.%d.%d", ($max>>24) & 0xff, ($max>>16) & 0xff, ($max>>8) & 0xff, $max & 0xff),
+		);
+	}
+
 }
