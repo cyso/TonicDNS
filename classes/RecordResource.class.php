@@ -58,7 +58,7 @@ class RecordResource extends TokenResource {
 	 * @param mixed $request Request parameters
 	 * @return Response True if record is valid, error message with parse errors otherwise.
 	 */
-	public function post($request) {
+	public function validate($request) {
 		$response = new FormattedResponse($request);
 		$data = $request->parseData();
 
@@ -122,5 +122,18 @@ class RecordResource extends TokenResource {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * This method provides legacy support, and is internally redirected to validate(). Older 
+	 * versions used the POST method instead of VALIDATE.
+	 *
+	 * @deprecated
+	 * @access public
+	 * @param mixed $request Request parameters
+	 * @return Response True if record is valid, error message with parse errors otherwise.
+	 */
+	public function post($request) {
+		return $this->validate($request);
 	}
 }
