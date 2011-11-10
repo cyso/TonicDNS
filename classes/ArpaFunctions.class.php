@@ -118,7 +118,7 @@ class ArpaFunctions {
 						"name" => $arpa,
 						"ip" => $single,
 						"reverse_dns" => null,
-						"arpa_zone_present" => false
+						"arpa_zone" => null
 					);
 				}
 			}
@@ -151,7 +151,7 @@ class ArpaFunctions {
 						"name" => $record['name'],
 						"ip" => HelperFunctions::arpa_to_ip($record['name']),
 						"reverse_dns" => $record['content'],
-						"arpa_zone_present" => true
+						"arpa_zone" => $zone
 					);
 				}
 			}
@@ -160,10 +160,11 @@ class ArpaFunctions {
 		if (empty($output)) {
 			$response->code = Response::NOTFOUND;
 			$response->error = "Could not find any records for given query.";
-			$out = array();
+			$out = false;
 		} else {
 			$response->code = Response::OK;
 			$response->body = $output;
+			$response->log_message = sprintf("Query returned %d Arpa records", count($output));
 			$out = $output;
 		}
 		return $response;
@@ -173,7 +174,41 @@ class ArpaFunctions {
 		return ArpaFunctions::get_all_arpa($response, $out, $query);
 	}
 
-	public function get_arpa($response, $identifier, &$out = null) {
+	public function get_arpa($response, $identifier, &$out = null, $extra_props = false) {
+		$arpa = HelperFunctions::ip_to_arpa($identifier);
+
+		for ($i = 0; ($ret = HelperFunctions::truncate_arpa($arpa, $i)) !== false; $i++) {
+			$response = ZoneFunctions::get_zone($response, $ret, $out);
+
+			if ($response->code !== Response::NOTFOUND) {
+				foreach ($out['records'] as $record) {
+					if ($record['type'] == "PTR" && 
+						HelperFunctions::ipv6_expand($identifier) == HelperFunctions::arpa_to_ip($record['name'])) {
+							$output = array(
+								"name" => $record['name'],
+								"ip" => $identifier,
+								"reverse_dns" => $record['content'],
+								"arpa_zone" => $ret
+							);
+
+							if ($extra_props) {
+								$output['ttl'] = $record['ttl'];
+								$output['priority'] = $record['priority'];
+							}
+
+							$response->code = Response::OK;
+							$response->body = $output;
+							$response->log_message = sprintf("Retrieved Arpa zone '%s' for IP '%s'", $record['name'], $identifier);
+							$out = $output;
+							return $response;
+						}
+				}
+			}
+		}
+
+		$response->code = Response::NOTFOUND;
+		$response->error = "Could not find the reverse zone for " . $identifier;
+		$out = false;
 		return $response;
 	}
 

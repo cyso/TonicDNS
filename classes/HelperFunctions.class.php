@@ -28,7 +28,13 @@ class HelperFunctions {
 		if (strpos($ip, ':') === 0)
 			$ip = '0'.$ip;
 
-		return $ip;
+		$p = explode(":", $ip);
+		$n = array();
+
+		foreach($p as $part)
+			$n[] = str_pad($part, 4, "0", STR_PAD_LEFT);
+
+		return implode(":", $n);
 	}
 
 	public function ipv6_to_arpa($ip) {
@@ -38,7 +44,7 @@ class HelperFunctions {
 		$n = '';
 
 		foreach($p as $part)
-			$n .= str_pad($part, 4, "0", STR_PAD_LEFT);
+			$n .= $part;
 
 		$n = str_split(strrev($n));
 

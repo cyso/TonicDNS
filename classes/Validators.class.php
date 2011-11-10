@@ -518,7 +518,7 @@ class ArpaValidator extends Validator {
 		"identifier" => array(
 			"valid_identifier" => array(
 				"rule" => array("check_valid_identifier"),
-				"message" => "Identifier is not valid. Must be a single IPv4 or IPv6 address, or an IPv4/IPv6 range in CIDR notation."
+				"message" => "Identifier is not valid. Must be a single IPv4 or IPv6 address."
 			)
 		),
 		"reverse_dns" => array(
@@ -536,10 +536,7 @@ class ArpaValidator extends Validator {
 	);
 
 	public function check_valid_identifier($content) {
-		if (preg_match(VALID_IPV4, $content) || preg_match(VALID_IPV4_RANGE)) {
-			return true;
-		}
-		if (preg_match(VALID_IPV6, $content) || preg_match(VALID_IPV6_RANGE)) {
+		if (preg_match(VALID_IPV4, $content) || preg_match(VALID_IPV6, $content)) {
 			return true;
 		}
 		return false;

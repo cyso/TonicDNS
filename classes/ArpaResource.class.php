@@ -39,7 +39,7 @@ class ArpaResource extends TokenResource {
 	 *            "name": <string>,
 	 *            "ip": <ip>,
 	 *            "reverse_dns": <string>|null,
-	 *            "arpa_zone_present": true|false
+	 *            "arpa_zone": <string>|null
 	 *      },0..n
 	 * ]
 	 *
