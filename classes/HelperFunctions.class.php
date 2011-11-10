@@ -32,7 +32,7 @@ class HelperFunctions {
 	}
 
 	public function ipv6_to_arpa($ip) {
-		$ip = ZoneFunctions::ipv6_expand($ip);
+		$ip = HelperFunctions::ipv6_expand($ip);
 
 		$p = explode(":", $ip);
 		$n = '';
@@ -45,10 +45,43 @@ class HelperFunctions {
 		return implode(".", $n) . ".ip6.arpa";
 	}
 
+	public function arpa_to_ipv6($arpa) {
+		$arpa = str_replace(".ip6.arpa", "", $arpa);
+
+		$p = explode(".", $arpa);
+		$p = array_reverse($p);
+
+		$q = implode("", $p);
+		return implode(":", str_split($q, 4));
+	}
+
 	public function ipv4_to_arpa($ip) {
 		$p = explode(".", $ip);
 
 		return "{$p[3]}.{$p[2]}.{$p[1]}.{$p[0]}.in-addr.arpa";
+	}
+
+	public function arpa_to_ipv4($arpa) {
+		$arpa = str_replace(".in-addr.arpa", "", $arpa);
+		$p = explode(".", $arpa);
+
+		return "{$p[3]}.{$p[2]}.{$p[1]}.{$p[0]}";
+	}
+
+	public function ip_to_arpa($ip) {
+		if (strpos($ip, ":") !== false) {
+			return HelperFunctions::ipv6_to_arpa($ip);
+		} else {
+			return HelperFunctions::ipv4_to_arpa($ip);
+		}
+	}
+
+	public function arpa_to_ip($arpa) {
+		if (strpos($arpa, "ip6") !== false) {
+			return HelperFunctions::arpa_to_ipv6($arpa);
+		} else {
+			return HelperFunctions::arpa_to_ipv4($arpa);
+		}
 	}
 
 	public function truncate_arpa($in, $n=0) {
@@ -80,4 +113,50 @@ class HelperFunctions {
 		);
 	}
 
+	public function is_ipv4_in_range($range, $ip) {
+		$max = explode(".", $range['max']);
+		$min = explode(".", $range['min']);
+		$ip = explode(".", $ip);
+
+		if ($max[0] >= $ip[0] && $ip[0] >= $min[0] &&
+			$max[1] >= $ip[1] && $ip[1] >= $min[1] &&
+			$max[2] >= $ip[2] && $ip[2] >= $min[2] &&
+			$max[3] >= $ip[3] && $ip[3] >= $min[3]) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public function expand_ipv4_range($range) {
+		$min = explode(".", $range['min']);
+		$max = explode(".", $range['max']);
+		$out = array();
+		if ($min[0] != $max[0]) {
+			for ($i = $min[0]; $i <= $max[0]; $i++) {
+				$out[] = sprintf("%d.%d.%d.%d", $i, 0, 0, 0);
+			}
+			return $out;
+		}
+		if ($min[1] != $max[1]) {
+			for ($i = $min[1]; $i <= $max[1]; $i++) {
+				$out[] = sprintf("%d.%d.%d.%d", $min[0], $i, 0, 0);
+			}
+			return $out;
+		}
+		if ($min[2] != $max[2]) {
+			for ($i = $min[2]; $i <= $max[2]; $i++) {
+				$out[] = sprintf("%d.%d.%d.%d", $min[0], $min[1], $i, 0);
+			}
+			return $out;
+		}
+		if ($min[3] != $max[3]) {
+			for ($i = $min[3]; $i <= $max[3]; $i++) {
+				$out[] = sprintf("%d.%d.%d.%d", $min[0], $min[1], $min[2], $i);
+			}
+			return $out;
+		}
+
+		return array($range['min']);
+	}
 }

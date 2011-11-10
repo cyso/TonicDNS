@@ -31,14 +31,14 @@ if (ValidatorConfig::BIND_COMPATABILITY === true) {
 	define("VALID_DOMAIN", "#^(?:[A-Z0-9](?:[A-Z0-9\-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}$#i");
 }
 define("VALID_QUERY", "#^[a-zA-Z0-9\-\.*]+$#");
-define("VALID_MULTI_QUERY", "#^[a-zA-Z0-9\-\.*,]+$#");
+define("VALID_RANGE_QUERY", "#^[a-zA-Z0-9\-\.:*,/]+|$#");
 define("VALID_RECORD_NAME", "#^(?:\*\.)?(?:[A-Z0-9_](?:[A-Z0-9\-_]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}$#i");
 define("VALID_TEMPLATE_NAME", "#^(?:\*\.)?(?:[A-Z0-9_\[](?:[A-Z0-9\-_]{0,61}[A-Z0-9\]])?\.)+(?:[A-Z]{2,6}|\[ZONE\])$#i");
 define("VALID_RECORD_TYPE", "#^A|AAAA|CNAME|MX|NAPTR|NS|PTR|RP|SOA|SPF|SSHFP|SRV|TXT$#");
 define("VALID_IPV4", "#^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$#");
 define("VALID_IPV6", "#^(?:(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}|(?=(?:[A-F0-9]{0,4}:){0,7}[A-F0-9]{0,4}$)(([0-9A-F]{1,4}:){1,7}|:)((:[0-9A-F]{1,4}){1,7}|:))$#i");
 define("VALID_IPV4_RANGE", "#^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/[0-9]{1,2}$#");
-define("VALID_IPV6_RANGE", "#^(?:(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}|(?=(?:[A-F0-9]{0,4}:){0,7}[A-F0-9]{0,4}/[0-9]{1,3}$)(([0-9A-F]{1,4}:){1,7}|:)((:[0-9A-F]{1,4}){1,7}|:))/[0-9]{1,3}$#1");
+define("VALID_IPV6_RANGE", "#^(?:(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}|(?=(?:[A-F0-9]{0,4}:){0,7}[A-F0-9]{0,4}/[0-9]{1,3}$)(([0-9A-F]{1,4}:){1,7}|:)((:[0-9A-F]{1,4}){1,7}|:))/[0-9]{1,3}$#i");
 
 class AuthenticationValidator extends Validator {
 	protected $rules = array(
@@ -529,7 +529,7 @@ class ArpaValidator extends Validator {
 		),
 		"query" => array(
 			"valid_query" => array(
-				"rule" => VALID_MULTI_QUERY,
+				"rule" => VALID_RANGE_QUERY,
 				"message" => "Query is invalid. May only contain alphanumeric characters, dashes (-), dots (.) and wildcards (*). Multiple queries must be seperated by comma's."
 			)
 		),
@@ -544,5 +544,6 @@ class ArpaValidator extends Validator {
 		}
 		return false;
 	}
+}
 
 ?>
