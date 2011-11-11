@@ -167,12 +167,13 @@ class ZoneResource extends TokenResource {
 	 *
 	 *   508 - Invalid request, missing required parameters or input validation failed.
 	 *   500 - Failed to connect to database or query execution error.
-	 *   409 - Zone already exists.
+	 *   409 - Zone already exists, or trying to insert records into a SLAVE zone.
 	 *
 	 * Errors (request with identifier):
 	 *
 	 *   508 - Invalid request, missing required parameters or input validation failed.
 	 *   500 - Failed to connect to database or query execution error.
+	 *   409 - Cannot insert records into a SLAVE zone.
 	 *   404 - Could not find zone.
 	 *
 	 * @access public
@@ -299,6 +300,7 @@ class ZoneResource extends TokenResource {
 	 *
 	 *   508 - Invalid request, missing required parameters or input validation failed.
 	 *   500 - Failed to connect to database or query execution error.
+	 *   409 - Cannot delete records from a SLAVE zone.
 	 *   404 - Could not find zone.
 	 *
 	 * Errors (request with identifier):

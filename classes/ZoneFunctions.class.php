@@ -312,14 +312,14 @@ class ZoneFunctions {
 
 		$orig_identifier = $identifier;
 		if (!ctype_digit($identifier)) {
-			$zone_id = $connection->prepare(sprintf(
-				"SELECT id FROM `%s` WHERE name = :name LIMIT 1;", PowerDNSConfig::DB_ZONE_TABLE
+			$zone = $connection->prepare(sprintf(
+				"SELECT id, type FROM `%s` WHERE name = :name LIMIT 1;", PowerDNSConfig::DB_ZONE_TABLE
 			));
 
 			$error = false;
-			if ($zone_id->execute(array(":name" => $identifier)) === false) {
+			if ($zone->execute(array(":name" => $identifier)) === false) {
 				$error = true;
-			} else if (($identifier = $zone_id->fetchColumn()) === false) {
+			} else if (($z = $zone->fetch(PDO::FETCH_ASSOC)) === false) {
 				$error = true;
 			}
 
@@ -334,6 +334,20 @@ class ZoneFunctions {
 
 				return $response;
 			}
+
+			if ($z['type'] == "SLAVE") {
+				$response->code = Response::CONFLICT;
+				$response->error = sprintf("Cannot insert records in to SLAVE zone %s", $identifier);
+				$out = false;
+
+				if ($commit) {
+					$connection->rollback();
+				}
+
+				return $response;
+			}
+
+			$identifier = $z['id'];
 		}
 
 		$statement = $connection->prepare(sprintf(
@@ -519,6 +533,13 @@ class ZoneFunctions {
 		if (empty($o)) {
 			$response->code = Response::NOTFOUND;
 			$response->error = "Resource does not exist";
+			$out = false;
+			return $response;
+		}
+
+		if ($o['type'] == "SLAVE") {
+			$response->code = Response::CONFLICT;
+			$response->error = sprintf("Cannot delete records from SLAVE zone %s", $identifier);
 			$out = false;
 			return $response;
 		}
