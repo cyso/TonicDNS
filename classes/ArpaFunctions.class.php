@@ -212,11 +212,88 @@ class ArpaFunctions {
 		return $response;
 	}
 
-	public function create_arpa($response, $data, &$out = null) {
+	public function create_arpa($response, $identifier, $data, &$out = null) {
+		ArpaFunctions::get_arpa($response, $identifier, $o);
+
+		if (!empty($o)) {
+			$response->code = Response::CONFLICT;
+			$response->error = "Resource already exists";
+			$out = false;
+			return $response;
+		}
+
+		unset($o);
+
+		ZoneFunctions::get_zone($response, $identifier, $o, false);
+
+		if (empty($o)) {
+			$response->code = Response::NOTFOUND;
+			$response->error = sprintf("Could not find Arpa zone for ip '%s'", $identifier);
+			$out = false;
+			return $response;
+		}
+
+		$zone = $o['name'];
+
+		unset($o);
+
+		$record = array(
+			array(
+				"name" => ZoneFunctions::ip_to_arpa($identifier),
+				"type" => "PTR",
+				"content" => $data
+			)
+		);
+
+		$response = ZoneFunctions::create_records($response, $zone, $record, $o, true);
+
+		if (empty($o)) {
+			return $response;
+		}
+
+		$response->code = Response::OK;
+		$response->body = true;
+		$response->log_message = sprintf("Added '%s' to Arpa zone '%s'", $identifier, $zone);
+
+		$out = true;
+
 		return $response;
 	}
 
 	public function delete_arpa($response, $identifier, &$out = null) {
+		ArpaFunctions::get_arpa($response, $identifier, $o, true);
+
+		if (empty($o)) {
+			$response->code = Response::NOTFOUND;
+			$response->error = sprintf("Could not find Arpa zone for IP %s", $identifier);
+			$out = false;
+			return $response;
+		}
+
+		unset($o);
+
+		$record = new stdClass();
+		$record->name = $o['name'];
+		$record->type = "PTR";
+		$record->content = $o['reverse_dns'];
+		$record->priority = $o['priority'];
+
+		$req = new stdClass();
+		$req->records = array($record);
+
+		$response = ZoneFunctions::delete_records($response, $o['arpa_zone'], $req, $o);
+
+		if (empty($o)) {
+			$out = false;
+			return $response;
+		}
+
+		$response->code = Response::OK;
+		$response->body = true;
+		$response->log_message = sprintf("Deleted Arpa record for IP %s", $identifier);
+
+		$out = true;
+
 		return $response;
 	}
 }

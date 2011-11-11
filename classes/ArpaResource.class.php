@@ -116,7 +116,7 @@ class ArpaResource extends TokenResource {
 	 *
 	 *   508 - Invalid request, missing required parameters or input validation failed.
 	 *   500 - Failed to connect to database or query execution error.
-	 *   409 - Record already exists.
+	 *   409 - Record already exists, or tried to insert a record in a SALVE Arpa zone.
 	 *   404 - Could not find suitable zone.
 	 *
 	 * @access public
@@ -149,7 +149,7 @@ class ArpaResource extends TokenResource {
 			return $response;
 		}
 
-		return ArpaFunctions::create_arpa($response, $data);
+		return ArpaFunctions::create_arpa($response, $identifier, $data->reverse_dns);
 	}
 
 	/**
@@ -163,7 +163,7 @@ class ArpaResource extends TokenResource {
 	 *
 	 *   508 - Invalid request, missing required parameters or input validation failed.
 	 *   500 - Failed to connect to database or query execution error.
-	 *   404 - Could not find zone.
+	 *   404 - Could not find Arpa zone.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
