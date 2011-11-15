@@ -360,6 +360,10 @@ class RecordValidator extends Validator {
 			if (!isset($type)) {
 				$type = "NS";
 			}
+		case "PTR":
+			if (!isset($type)) {
+				$type = "PTR";
+			}
 		case "CNAME":
 			if (!isset($type)) {
 				$type = "CNAME";
