@@ -120,14 +120,11 @@ class HelperFunctions {
 	}
 
 	public function is_ipv4_in_range($range, $ip) {
-		$max = explode(".", $range['max']);
-		$min = explode(".", $range['min']);
-		$ip = explode(".", $ip);
+		$max = ip2long($range['max']);
+		$min = ip2long($range['min']);
+		$ip = ip2long($ip);
 
-		if ($max[0] >= $ip[0] && $ip[0] >= $min[0] &&
-			$max[1] >= $ip[1] && $ip[1] >= $min[1] &&
-			$max[2] >= $ip[2] && $ip[2] >= $min[2] &&
-			$max[3] >= $ip[3] && $ip[3] >= $min[3]) {
+		if ($max >= $ip && $ip >= $min) {
 			return true;
 		} else {
 			return false;
@@ -135,34 +132,18 @@ class HelperFunctions {
 	}
 
 	public function expand_ipv4_range($range) {
-		$min = explode(".", $range['min']);
-		$max = explode(".", $range['max']);
+		$min = ip2long($range['min']);
+		$max = ip2long($range['max']);
 		$out = array();
-		if ($min[0] != $max[0]) {
-			for ($i = $min[0]; $i <= $max[0]; $i++) {
-				$out[] = sprintf("%d.%d.%d.%d", $i, 0, 0, 0);
-			}
-			return $out;
-		}
-		if ($min[1] != $max[1]) {
-			for ($i = $min[1]; $i <= $max[1]; $i++) {
-				$out[] = sprintf("%d.%d.%d.%d", $min[0], $i, 0, 0);
-			}
-			return $out;
-		}
-		if ($min[2] != $max[2]) {
-			for ($i = $min[2]; $i <= $max[2]; $i++) {
-				$out[] = sprintf("%d.%d.%d.%d", $min[0], $min[1], $i, 0);
-			}
-			return $out;
-		}
-		if ($min[3] != $max[3]) {
-			for ($i = $min[3]; $i <= $max[3]; $i++) {
-				$out[] = sprintf("%d.%d.%d.%d", $min[0], $min[1], $min[2], $i);
-			}
+
+		if (!$min || !$max || $min > $max) {
 			return $out;
 		}
 
-		return array($range['min']);
+		for ($i = $min; $i <= $max; $i++) {
+			$out[] = long2ip($i);
+		}
+
+		return $out;
 	}
 }
