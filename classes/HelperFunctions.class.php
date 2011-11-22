@@ -37,6 +37,41 @@ class HelperFunctions {
 		return implode(":", $n);
 	}
 
+	public function ipv6_compress($ip) {
+		$ip = ipv6_expand($ip);
+		$p = explode(":", $ip);
+
+		$ranges = array();
+
+		$i = 0;
+		for ($i = 0; $i < 8; $i++) {
+			$p[$i] = intval($p[$i]);
+			$count = 0;
+			for ($j = $i; $j < 8; $j++) {
+				if (intval($p[$j]) !== 0 && $count !== 0) {
+					break;
+				} else if (intval($p[$j]) === 0) {
+					$count++;
+				}
+			}
+			$ranges[$count] = $i;
+		}
+
+		krsort($ranges);
+		$s = each($ranges);
+		$start = $s['value'];
+		$length = $s['key'];
+
+		if ($length === 0) {
+			return implode(":", $p);
+		} else {
+			$part1 = implode(":", array_slice($p, 0, $start));
+			$part2 = implode(":", array_slice($p, $start + $length));
+
+			return implode("::", array($part1, $part2));
+		}
+	}
+
 	public function ipv6_to_arpa($ip) {
 		$ip = HelperFunctions::ipv6_expand($ip);
 
@@ -70,8 +105,35 @@ class HelperFunctions {
 	public function arpa_to_ipv4($arpa) {
 		$arpa = str_replace(".in-addr.arpa", "", $arpa);
 		$p = explode(".", $arpa);
+		while (count($p) < 4) {
+			array_unshift($p, 0);
+		}
 
 		return "{$p[3]}.{$p[2]}.{$p[1]}.{$p[0]}";
+	}
+
+	public function arpa_to_ipv4_cidr($arpa) {
+		$arpa = str_replace(".in-addr.arpa", "", $arpa);
+		$p = explode(".", $arpa);
+		$cidr = count($p) * 8;
+		while (count($p) < 4) {
+			array_unshift($p, 0);
+		}
+
+		return "{$p[3]}.{$p[2]}.{$p[1]}.{$p[0]}/{$cidr}";
+	}
+
+	public function arpa_to_ipv6_cidr($arpa) {
+		$arpa = str_replace(".ip6.arpa", "", $arpa);
+		$p = explode(".", $arpa);
+		$cidr = count($p) * 4;
+		while (count($p) < 32) {
+			array_unshift($p, 0);
+		}
+
+		$p = array_reverse($p);
+
+		return implode(":", str_split(implode("", $p), 4)) . "/" . $cidr;
 	}
 
 	public function ip_to_arpa($ip) {
@@ -87,6 +149,14 @@ class HelperFunctions {
 			return HelperFunctions::arpa_to_ipv6($arpa);
 		} else {
 			return HelperFunctions::arpa_to_ipv4($arpa);
+		}
+	}
+
+	public function arpa_to_ip_cidr($arpa) {
+		if (strpos($arpa, "ip6") !== false) {
+			return HelperFunctions::arpa_to_ipv6_cidr($arpa);
+		} else {
+			return HelperFunctions::arpa_to_ipv4_cidr($arpa);
 		}
 	}
 
