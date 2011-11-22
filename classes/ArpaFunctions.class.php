@@ -87,6 +87,7 @@ class ArpaFunctions {
 			}
 
 			$output = array();
+			$filter_singles = $singles;
 
 			foreach ($ranges as $range) {
 				$singles = array_merge($singles, HelperFunctions::expand_ipv4_range($range));
@@ -120,6 +121,11 @@ class ArpaFunctions {
 						"reverse_dns" => null,
 						"arpa_zone" => null
 					);
+
+					$index = array_search($single, $filter_singles);
+					if ($index !== false) {
+						unset($filter_singles[$index]);
+					}
 				}
 			}
 			$filter_ranges = $ranges;
@@ -134,18 +140,22 @@ class ArpaFunctions {
 			foreach ($records['records'] as $record) {
 				if ($record['type'] == "PTR") {
 					$ip = HelperFunctions::arpa_to_ip($record['name']);
-					if (!empty($filter_ranges) && 
-						strpos(":", $ip) === false) {
-							$allowed = false;
-							foreach ($filter_ranges as $filter) {
-								if (HelperFunctions::is_ipv4_in_range($filter, $ip)) {
-									$allowed = true;
-									break;
-								}
+					$allowed = false;
+					if (!empty($filter_ranges) && strpos(":", $ip) === false) {
+						foreach ($filter_ranges as $filter) {
+							if (HelperFunctions::is_ipv4_in_range($filter, $ip)) {
+								$allowed = true;
+								break;
 							}
-							if (!$allowed) {
-								continue;
-							}
+						}
+					}
+					if (!$allowed && !empty($filter_singles) && in_array($ip, $filter_singles)) {
+						$allowed = true;
+						$index = array_search($ip, $filter_singles);
+						unset($filter_singles[$index]);
+					}
+					if (!$allowed) {
+						continue;
 					}
 					$output[] = array(
 						"name" => $record['name'],
@@ -153,6 +163,21 @@ class ArpaFunctions {
 						"reverse_dns" => $record['content'],
 						"arpa_zone" => $zone
 					);
+				}
+			}
+		}
+
+		foreach ($filter_singles as $missing) {
+			if (preg_match(VALID_IPV4, $missing)) {
+				foreach ($zones as $zone) {
+					if (HelperFunctions::is_ipv4_in_range(HelperFunctions::calc_ipv4_range(HelperFunctions::arpa_to_ipv4_cidr($zone)), $missing)) {
+						$output[] = array(
+							"name" => HelperFunctions::ip_to_arpa($missing),
+							"ip" => $missing,
+							"reverse_dns" => null,
+							"arpa_zone" => $zone
+						);
+					}
 				}
 			}
 		}
@@ -201,7 +226,7 @@ class ArpaFunctions {
 							$response->log_message = sprintf("Retrieved Arpa zone '%s' for IP '%s'", $record['name'], $identifier);
 							$out = $output;
 							return $response;
-						}
+					}
 				}
 			}
 		}
