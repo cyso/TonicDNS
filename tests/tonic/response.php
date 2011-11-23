@@ -20,7 +20,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-require_once('../lib/tonic.php');
+require_once('../../lib/tonic.php');
 require_once('def/response.php');
 
 /**
