@@ -218,7 +218,7 @@ class ArpaResource extends TokenResource {
 		$response = new FormattedResponse($request);
 		$data = $request->parseData();
 
-		if (empty($data) || !isset($data->arpa) || !is_array($data_arpa)) {
+		if (empty($data) || !isset($data->arpa) || !is_array($data->arpa)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure that all mandatory properties have been set.";
 			return $response;
