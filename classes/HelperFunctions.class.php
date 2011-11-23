@@ -40,7 +40,7 @@ class HelperFunctions {
 	}
 
 	public function ipv6_compress($ip) {
-		$ip = ipv6_expand($ip);
+		$ip = HelperFunctions::ipv6_expand($ip);
 		$p = explode(":", $ip);
 
 		$ranges = array();
