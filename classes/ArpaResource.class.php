@@ -179,7 +179,7 @@ class ArpaResource extends TokenResource {
 			return $response;
 		}
 
-		$validator = new ArpaValidator($data);
+		$validator = new ArpaValidator();
 		$validator->identifier = $identifier;
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
@@ -187,7 +187,7 @@ class ArpaResource extends TokenResource {
 			return $response;
 		}
 
-		return ArpaFunctions::delete_arpa($response, $data->name, $data);
+		return ArpaFunctions::delete_arpa($response, $identifier);
 	}
 
 	/**

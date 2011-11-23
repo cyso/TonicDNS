@@ -403,7 +403,6 @@ class ZoneFunctions {
 		$response->log_message = sprintf("Zone %s added %d records.", $orig_identifier, count($data->records));
 
 		$out = true;
-
 		return $response;
 	}
 

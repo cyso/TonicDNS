@@ -22,6 +22,8 @@
  */
 class HelperFunctions {
 	public function ipv6_expand($ip) {
+		if (!preg_match(VALID_IPV6, $ip))
+			return $ip;
 		if (strpos($ip, '::') !== false)
 			$ip = str_replace('::', str_repeat(':0', 8 - substr_count($ip, ':')).':', $ip);
 

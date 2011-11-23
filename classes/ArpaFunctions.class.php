@@ -232,7 +232,7 @@ class ArpaFunctions {
 		}
 
 		$response->code = Response::NOTFOUND;
-		$response->error = "Could not find the reverse zone for " . $identifier;
+		$response->error = "Could not find the Arpa zone for IP " . $identifier;
 		$out = false;
 		return $response;
 	}
@@ -246,6 +246,7 @@ class ArpaFunctions {
 			$out = false;
 			return $response;
 		}
+		$response->error = null;
 
 		unset($o);
 
@@ -262,15 +263,15 @@ class ArpaFunctions {
 
 		unset($o);
 
-		$record = array(
-			array(
-				"name" => ZoneFunctions::ip_to_arpa($identifier),
-				"type" => "PTR",
-				"content" => $data
-			)
-		);
+		$record = new stdClass();
+		$record->name = HelperFunctions::ip_to_arpa($identifier);
+		$record->type = "PTR";
+		$record->content = $data;
 
-		$response = ZoneFunctions::create_records($response, $zone, $record, $o, true);
+		$req = new stdClass();
+		$req->records = array($record);
+
+		$response = ZoneFunctions::create_records($response, $zone, $req, $o, true);
 
 		if (empty($o)) {
 			return $response;
@@ -295,8 +296,6 @@ class ArpaFunctions {
 			return $response;
 		}
 
-		unset($o);
-
 		$record = new stdClass();
 		$record->name = $o['name'];
 		$record->type = "PTR";
@@ -305,6 +304,7 @@ class ArpaFunctions {
 
 		$req = new stdClass();
 		$req->records = array($record);
+
 
 		$response = ZoneFunctions::delete_records($response, $o['arpa_zone'], $req, $o);
 
