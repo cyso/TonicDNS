@@ -266,7 +266,7 @@ class Validator {
 		if (!empty($output)) {
 			return implode("\n", $output);
 		} else {
-			return $output;
+			return "No errors";
 		}
 	}
 
