@@ -31,11 +31,14 @@ if (ValidatorConfig::BIND_COMPATABILITY === true) {
 	define("VALID_DOMAIN", "#^(?:[A-Z0-9](?:[A-Z0-9\-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}$#i");
 }
 define("VALID_QUERY", "#^[a-zA-Z0-9\-\.*]+$#");
+define("VALID_RANGE_QUERY", "#^[a-zA-Z0-9\-\.:*,/]+|$#");
 define("VALID_RECORD_NAME", "#^(?:\*\.)?(?:[A-Z0-9_](?:[A-Z0-9\-_]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}$#i");
 define("VALID_TEMPLATE_NAME", "#^(?:\*\.)?(?:[A-Z0-9_\[](?:[A-Z0-9\-_]{0,61}[A-Z0-9\]])?\.)+(?:[A-Z]{2,6}|\[ZONE\])$#i");
 define("VALID_RECORD_TYPE", "#^A|AAAA|CNAME|MX|NAPTR|NS|PTR|RP|SOA|SPF|SSHFP|SRV|TXT$#");
 define("VALID_IPV4", "#^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$#");
 define("VALID_IPV6", "#^(?:(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}|(?=(?:[A-F0-9]{0,4}:){0,7}[A-F0-9]{0,4}$)(([0-9A-F]{1,4}:){1,7}|:)((:[0-9A-F]{1,4}){1,7}|:))$#i");
+define("VALID_IPV4_RANGE", "#^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/[0-9]{1,2}$#");
+define("VALID_IPV6_RANGE", "#^(?:(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}|(?=(?:[A-F0-9]{0,4}:){0,7}[A-F0-9]{0,4}/[0-9]{1,3}$)(([0-9A-F]{1,4}:){1,7}|:)((:[0-9A-F]{1,4}){1,7}|:))/[0-9]{1,3}$#i");
 
 class AuthenticationValidator extends Validator {
 	protected $rules = array(
@@ -507,6 +510,36 @@ class RecordValidator extends Validator {
 		}
 
 		return true;
+	}
+}
+
+class ArpaValidator extends Validator {
+	protected $rules = array(
+		"identifier" => array(
+			"valid_identifier" => array(
+				"rule" => array("check_valid_identifier"),
+				"message" => "Identifier is not valid. Must be a single IPv4 or IPv6 address."
+			)
+		),
+		"reverse_dns" => array(
+			"valid_reverse_dns" => array(
+				"rule" => VALID_DOMAIN,
+				"message" => "Reverse DNS is not valid. Must be a valid FQDN."
+			)
+		),
+		"query" => array(
+			"valid_query" => array(
+				"rule" => VALID_RANGE_QUERY,
+				"message" => "Query is invalid. May only contain alphanumeric characters, dashes (-), dots (.) and wildcards (*). Multiple queries must be seperated by comma's."
+			)
+		),
+	);
+
+	public function check_valid_identifier($content) {
+		if (preg_match(VALID_IPV4, $content) || preg_match(VALID_IPV6, $content)) {
+			return true;
+		}
+		return false;
 	}
 }
 

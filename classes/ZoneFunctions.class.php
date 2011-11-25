@@ -86,13 +86,13 @@ class ZoneFunctions {
 	public function get_zone($response, $identifier, &$out = null, $details = true, $arpa_expand = true) {
 		$arpa = null;
 		if (preg_match(VALID_IPV4, $identifier) === 1) {
-			$arpa = ZoneFunctions::ipv4_to_arpa($identifier);
+			$arpa = HelperFunctions::ipv4_to_arpa($identifier);
 		} else if (preg_match(VALID_IPV6, $identifier) === 1) {
-			$arpa = ZoneFunctions::ipv6_to_arpa($identifier);
+			$arpa = HelperFunctions::ipv6_to_arpa($identifier);
 		}
 
 		if ($arpa !== null && $arpa_expand === true) {
-			for ($i = 0; ($ret = ZoneFunctions::truncate_arpa($arpa, $i)) !== false; $i++) {
+			for ($i = 0; ($ret = HelperFunctions::truncate_arpa($arpa, $i)) !== false; $i++) {
 				$response = ZoneFunctions::get_zone($response, $ret, $out, $details, false);
 
 				if ($response->code !== Response::NOTFOUND) {
@@ -403,7 +403,6 @@ class ZoneFunctions {
 		$response->log_message = sprintf("Zone %s added %d records.", $orig_identifier, count($data->records));
 
 		$out = true;
-
 		return $response;
 	}
 
@@ -596,48 +595,5 @@ class ZoneFunctions {
 
 		return $response;
 	}
-
-	private function ipv6_expand($ip) {
-		if (strpos($ip, '::') !== false)
-			$ip = str_replace('::', str_repeat(':0', 8 - substr_count($ip, ':')).':', $ip);
-
-		if (strpos($ip, ':') === 0)
-			$ip = '0'.$ip;
-
-		return $ip;
-	}
-
-	private function ipv6_to_arpa($ip) {
-		$ip = ZoneFunctions::ipv6_expand($ip);
-
-		$p = explode(":", $ip);
-		$n = '';
-
-		foreach($p as $part)
-			$n .= str_pad($part, 4, "0", STR_PAD_LEFT);
-
-		$n = str_split(strrev($n));
-
-		return implode(".", $n) . ".ip6.arpa";
-	}
-
-	private function ipv4_to_arpa($ip) {
-		$p = explode(".", $ip);
-
-		return "{$p[3]}.{$p[2]}.{$p[1]}.{$p[0]}.in-addr.arpa";
-	}
-
-	private function truncate_arpa($in, $n=0) {
-		$parts = explode(".", $in);
-
-		if ($n >= count($parts)-2)
-			return false;
-
-		for($i = 0; $i < $n; $i++)
-			array_shift($parts);
-
-		return implode(".", $parts);
-	}
-
 }
 ?>

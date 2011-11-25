@@ -795,6 +795,7 @@ class Response {
           NOTFOUND = 404,
           METHODNOTALLOWED = 405,
           NOTACCEPTABLE = 406,
+          CONFLICT = 409,
           GONE = 410,
           LENGTHREQUIRED = 411,
           PRECONDITIONFAILED = 412,
