@@ -18,10 +18,10 @@
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_once("../conf/validator.conf.php");
-require_once("../lib/validator.php");
-require_once("../classes/HelperFunctions.class.php");
-require_once("../classes/Validators.class.php");
+require_once("conf/validator.conf.php");
+require_once("lib/validator.php");
+require_once("classes/HelperFunctions.class.php");
+require_once("classes/Validators.class.php");
 
 /**
  * HelperFunctions unit tests
