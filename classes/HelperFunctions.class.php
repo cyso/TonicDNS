@@ -18,7 +18,7 @@
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * Arpa support functions
+ * Support functions
  */
 class HelperFunctions {
 	public function ipv6_expand($ip) {
@@ -217,5 +217,40 @@ class HelperFunctions {
 		}
 
 		return $out;
+	}
+
+	public function has_records_of_type($name, $types = array()) {
+		try {
+			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+		} catch (PDOException $e) {
+			return null;
+		}
+
+		$statement = sprintf("SELECT COUNT(*) FROM %s WHERE name = ?", PowerDNSConfig::DB_RECORD_TABLE);
+
+		$parameters = array($name);
+		$clause = array();
+
+		foreach ($types as $t) {
+			if (strpos($t, "!") === 0) {
+				$clause[] = "type != ?";
+				$parameters[] = substr($t, 1);
+			} else {
+				$clause[] = "type = ?";
+				$parameters[] = $t;
+			}
+		}
+
+		if (count($clause) > 0) {
+			$statement .= " AND " . implode(" AND ", $clause);
+		}
+
+		$stat = $connection->prepare($statement);
+
+		if ($stat->execute($parameters) === false || ($count = $stat->fetchColumn()) === 0) {
+			return false;
+		} else {
+			return $count;
+		}
 	}
 }

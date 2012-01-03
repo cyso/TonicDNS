@@ -267,12 +267,15 @@ class ZoneValidator extends Validator {
 
 class RecordValidator extends Validator {
 	public $record_type = "NORMAL";
+	public static $cnames = array();
+	public static $others = array();
 
-	public function __construct() {
+	public function __construct($data = null) {
 		$r = VALID_RECORD_TYPE;
 		$r = str_replace(array("#", "^", "$"), array("", "", ""), $r);
 		$records = explode("|", $r);
 		$this->rules['type']['valid_type']['message'] .= implode(", ", $records) . ".";
+		parent::__construct($data);
 	}
 
 	protected $rules = array(
@@ -284,7 +287,7 @@ class RecordValidator extends Validator {
 		),
 		"type" => array(
 			"valid_type" => array(
-				"rule" => VALID_RECORD_TYPE,
+				"rule" => array("check_record_type"),
 				"message" => "Record type is not valid. Must be one of: "
 			)
 		),
@@ -329,6 +332,31 @@ class RecordValidator extends Validator {
 				return "Record name is not valid. Must start with an alphanumeric character, and may only contain alphanumeric characters and dots (.). Must end in a valid tld. May start with '*.' to indicate a wildcard domain.";
 			}
 		}
+	}
+
+	public function check_record_type($content) {
+		if (preg_match(VALID_RECORD_TYPE, $content) === 0) {
+			return false;
+		}
+
+		if ($this->type != 'CNAME' && in_array($this->name, RecordValidator::$cnames)) {
+			return sprintf("Cannot add a new record of type %s when a CNAME record is being inserted for %s", $this->type, $this->name);
+		} else if ($this->type == 'CNAME' && in_array($this->name, RecordValidator::$others)) {
+			return sprintf("Cannot add a new CNAME record when a record of another type is already present for %s", $this->name);
+		}
+
+		if ($this->type != 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("CNAME")) != false) {
+			return sprintf("Cannot add a new record of type %s when a CNAME record is already present for %s", $this->type, $this->name);
+		} else if ($this->type == 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("!CNAME")) != false) {
+			return sprintf("Cannot add a new CNAME record when a record of another type is already present for %s", $this->name);
+		}
+
+		if ($this->type == 'CNAME') {
+			RecordValidator::$cnames[] = $this->name;
+		} else {
+			RecordValidator::$others[] = $this->name;
+		}
+		return true;
 	}
 
 	public function check_record_content($content) {
