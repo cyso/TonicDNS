@@ -45,24 +45,28 @@ class AuthenticationValidator extends Validator {
 		"username" => array(
 			"valid_username" => array(
 				"rule" => VALID_NAME,
+				"code" => "AUTH_INVALID_NAME",
 				"message" => "Username is not valid. May only contain word characters (a-z, 0-9), underscores (_) or dashes (-)."
 			)
 		),
 		"password" => array(
 			"valid_password" => array(
 				"rule" => VALID_NOTEMPTY,
+				"code" => "AUTH_INVALID_PASSWORD",
 				"message" => "Password is not valid. This field is mandatory, and must be set."
 			)
 		),
 		"local_user" => array(
 			"valid_local_user" => array(
 				"rule" => VALID_NOTEMPTY,
+				"code" => "AUTH_INVALID_LOCAL_USER",
 				"message" => "Local user must be set."
 			)
 		),
 		"token" => array(
 			"valid_token" => array(
 				"rule" => VALID_TOKEN,
+				"code" => "AUTH_INVALID_TOKEN",
 				"message" => "Token is not valid. Must be a 40 character hexadecimal string."
 			)
 		),
@@ -121,54 +125,63 @@ class ZoneValidator extends Validator {
 		"identifier" => array(
 			"valid_identifier" => array(
 				"rule" => array("check_valid_domain"),
+				"code" => "ZONE_INVALID_DOMAIN",
 				"message" => "Identifier is not valid. Must be a valid FQDN."
 			)
 		),
 		"name" => array(
 			"valid_name" => array(
 				"rule" => VALID_DOMAIN,
+				"code" => "ZONE_INVALID_DOMAIN",
 				"message" => "Name is not valid. Must be a valid FQDN."
 			)
 		),
 		"type" => array(
 			"valid_type" => array(
 				"rule" => array("check_zone_type"),
+				"code" => "ZONE_INVALID_TYPE",
 				"message" => ""
 			)
 		),
 		"master" => array(
 			"valid_master" => array(
 				"rule" => array("check_zone_master"),
+				"code" => "ZONE_INVALID_MASTER",
 				"message" => "Master is not valid."
 			)
 		),
 		"last_check" => array(
 			"valid_last_check" => array(
 				"rule" => VALID_INT,
+				"code" => "ZONE_INVALID_LAST_CHECK",
 				"message" => "Last check is not valid. Must be an integer."
 			)
 		),
 		"notified_serial" => array(
 			"valid_notified_serial" => array(
 				"rule" => VALID_INT,
+				"code" => "ZONE_INVALID_NOTIFIED_SERIAL",
 				"message" => "Notified serial is not valid. Must be an integer."
 			)
 		),
 		"templates" => array(
 			"valid_templates" => array(
 				"rule" => array("check_templates"),
+				"code" => "ZONE_INVALID_TEMPLATES",
 				"message" => "Templates are not valid."
 			)
 		),
 		"records" => array(
 			"valid_records" => array(
 				"rule" => array("check_records"),
+				"code" => "ZONE_INVALID_RECORDS",
 				"message" => "DNS records are not valid."
 			)
 		),
 		"query" => array(
 			"valid_query" => array(
 				"rule" => VALID_QUERY,
+				"code" => "ZONE_INVALID_QUERY",
 				"message" => "Query is invalid. May only contain alphanumeric characters, dashes (-), dots (.) and wildcards (*)."
 			)
 		),
@@ -282,36 +295,42 @@ class RecordValidator extends Validator {
 		"name" => array(
 			"valid_name" => array(
 				"rule" => array("check_record_name"),
+				"code" => "RECORD_INVALID_NAME",
 				"message" => "Record name is not valid. Must start with an alphanumeric character, and may only contain alphanumeric characters and dots (.). Must end in a valid tld. May start with '*.' to indicate a wildcard domain."
 			)
 		),
 		"type" => array(
 			"valid_type" => array(
 				"rule" => array("check_record_type"),
+				"code" => "RECORD_INVALID_TYPE",
 				"message" => "Record type is not valid. Must be one of: "
 			)
 		),
 		"content" => array(
 			"valid_content" => array(
 				"rule" => array("check_record_content"),
+				"code" => "RECORD_INVALID_CODE",
 				"message" => "Record content is not valid."
 			)
 		),
 		"ttl" => array(
 			"valid_ttl" => array(
 				"rule" => VALID_INT,
+				"code" => "RECORD_INVALID_TTL",
 				"message" => "Record TTL is not valid. Must be an integer."
 			)
 		),
 		"priority" => array(
 			"valid_priority" => array(
 				"rule" => VALID_INT,
+				"code" => "RECORD_INVALID_PRIORITY",
 				"message" => "Record priority is not valid. Must be an integer."
 			)
 		),
 		"change_date" => array(
 			"valid_change_date" => array(
 				"rule" => VALID_INT,
+				"code" => "RECORD_INVALID_CHANGE_DATE",
 				"message" => "Record change date is not valid. Must be an Unix timestamp."
 			)
 		),
@@ -340,15 +359,27 @@ class RecordValidator extends Validator {
 		}
 
 		if ($this->type != 'CNAME' && in_array($this->name, RecordValidator::$cnames)) {
-			return sprintf("Cannot add a new record of type %s when a CNAME record is being inserted for %s", $this->type, $this->name);
+			return array(
+				"message" => sprintf("Cannot add a new record of type %s when a CNAME record is being inserted for %s", $this->type, $this->name),
+				"code" => "RECORD_CNAME_ALREADY_INSERT"
+			);
 		} else if ($this->type == 'CNAME' && in_array($this->name, RecordValidator::$others)) {
-			return sprintf("Cannot add a new CNAME record when a record of another type is already present for %s", $this->name);
+			return array(
+				"message" => sprintf("Cannot add a new CNAME record when a record of another type is being inserted for %s", $this->name),
+				"code" => "RECORD_CNAME_OTHER_INSERT"
+			);
 		}
 
 		if ($this->type != 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("CNAME")) != false) {
-			return sprintf("Cannot add a new record of type %s when a CNAME record is already present for %s", $this->type, $this->name);
+			return array(
+				"message" => sprintf("Cannot add a new record of type %s when a CNAME record is already present for %s", $this->type, $this->name),
+				"code" => "RECORD_CNAME_ALREADY_PRESENT"
+			);
 		} else if ($this->type == 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("!CNAME")) != false) {
-			return sprintf("Cannot add a new CNAME record when a record of another type is already present for %s", $this->name);
+			return array(
+				"message" => sprintf("Cannot add a new CNAME record when a record of another type is already present for %s", $this->name),
+				"code" => "RECORD_CNAME_OTHER_PRESENT"
+			);
 		}
 
 		if ($this->type == 'CNAME') {
@@ -362,7 +393,10 @@ class RecordValidator extends Validator {
 	public function check_record_content($content) {
 		$prefix = "Record content is not valid. ";
 		if (empty($content)) {
-			return $prefix . "Content may never be empty.";
+			return array(
+				"message" => $prefix . "Content may never be empty.",
+				"code" => "RECORD_RHS_EMPTY"
+			);
 		}
 
 		if (!isset($this->type) || empty($this->type)) {
@@ -372,17 +406,26 @@ class RecordValidator extends Validator {
 		switch ($this->type) {
 		case "A":
 			if (preg_match(VALID_IPV4, $content) === 0) {
-				return $prefix . "An A record requires a valid IPv4 address without trailing dot.";
+				return array(
+					"message" => $prefix . "An A record requires a valid IPv4 address without trailing dot.",
+					"code" => "RECORD_RHS_INVALID_IPV4"
+				);
 			}
 			break;
 		case "AAAA":
 			if (preg_match(VALID_IPV6, $content) === 0) {
-				return $prefix . "An AAAA record requires a valid IPv6 address without trailing dot. IPv4 addresses in IPv6 notation are not supported.";
+				return array(
+					"message" => $prefix . "An AAAA record requires a valid IPv6 address without trailing dot. IPv4 addresses in IPv6 notation are not supported.",
+					"code" => "RECORD_RHS_INVALID_IPV6"
+				);
 			}
 			break;
 		case "MX":
 			if (!isset($this->priority)) {
-				return $prefix . "A MX record must also specify a priority.";
+				return array(
+					"message" => $prefix . "A MX record must also specify a priority.",
+					"code" => "RECORD_RHS_MISSING_PRIORITY"
+				);
 			}
 			if (!isset($type)) {
 				$type = "MX";
@@ -400,32 +443,47 @@ class RecordValidator extends Validator {
 				$type = "CNAME";
 			}
 			if (preg_match(VALID_DOMAIN, $content) === 0) {
-				return $prefix . "A $type record must contain a valid FQDN without trailing dot.";
+				return array(
+					"message" => $prefix . "A $type record must contain a valid FQDN without trailing dot.",
+					"code" => "RECORD_RHS_INVALID_FQDN"
+				);
 			}
 			break;
 		case "NAPTR":
 			$parts = explode(" ", $content);
 			if (count($parts) !== 6) {
-				return $prefix . "A NAPTR record must provide all 6 parts (note the quotes and trailing dot): <order> <preference> '<flags>' '<service>' '<regex>' replacement.";
+				return array(
+					"message" => $prefix . "A NAPTR record must provide all 6 parts (note the quotes and trailing dot): <order> <preference> '<flags>' '<service>' '<regex>' replacement.",
+					"code" => "RECORD_RHS_NAPTR_PARTS_MISSING"
+				);
 			}
 			for ($i = 0; $i < count($parts); $i++) {
 				switch ($i) {
 				case 0:
 				case 1:
 					if (!ctype_digit($parts[$i])) {
-						return $prefix . "NAPTR record part $i must be a valid integer.";
+						return array(
+							"message" => $prefix . "NAPTR record part $i must be a valid integer.",
+							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+						);
 					}
 					break;
 				case 2:
 				case 3:
 				case 4:
 					if (preg_match(VALID_QUOTED, $parts[$i]) === 0) {
-						return $prefix . "NAPTR record part $i must be a valid quoted string.";
+						return array(
+							"message" => $prefix . "NAPTR record part $i must be a valid quoted string.",
+							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+						);
 					}
 					break;
 				case 5:
 					if (preg_match(VALID_NOTEMPTY, $parts[$i]) === 0) {
-						return $prefix . "NAPTR record part $i must be a valid record pointer, or a single dot (.).";
+						return array(
+							"message" => $prefix . "NAPTR record part $i must be a valid record pointer, or a single dot (.).",
+							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+						);
 					}
 					break;
 				}
@@ -434,30 +492,48 @@ class RecordValidator extends Validator {
 		case "RP":
 			$parts = explode(" ", $content);
 			if (count($parts) !== 2) {
-				return $prefix . "A RP record must provide all 2 parts: <mailbox name> <more-info pointer>";
+				return array(
+					"message" => $prefix . "A RP record must provide all 2 parts: <mailbox name> <more-info pointer>",
+					"code" => "RECORD_RHS_RP_PARTS_MISSING"
+				);
 			}
 			if (preg_match(VALID_DOMAIN, $parts[0]) === 0) {
-				return $prefix . "A RP records mailbox name must be an email address with the at-sign replaced by a dot (.).";
+				return array(
+					"message" => $prefix . "A RP records mailbox name must be an email address with the at-sign replaced by a dot (.).",
+					"code" => "RECORD_RHS_RP_INVALID_PART_0"
+				);
 			}
 			if (preg_match(VALID_DOMAIN, $parts[1]) === 0) {
-				return $prefix . "A RP records more-info pointer must be a valid FQDN.";
+				return array(
+					"message" => $prefix . "A RP records more-info pointer must be a valid FQDN.",
+					"code" => "RECORD_RHS_RP_INVALID_PART_1"
+				);
 			}
 			break;
 		case "SOA":
 			$parts = explode(" ", $content);
 			if (count($parts) !== 7) {
-				return $prefix . "A SOA record must provide all 7 parts: <primary> <hostmaster> <serial> <refresh> <retry> <expire> <default_ttl>";
+				return array(
+					"message" => $prefix . "A SOA record must provide all 7 parts: <primary> <hostmaster> <serial> <refresh> <retry> <expire> <default_ttl>",
+					"code" => "RECORD_RHS_SOA_PARTS_MISSING"
+				);
 			}
 			for ($i = 0; $i < count($parts); $i++) {
 				switch ($i) {
 				case 0:
 					if (preg_match(VALID_DOMAIN, $parts[$i]) === 0) {
-						return $prefix . "A SOA record must provide a valid FQDN as primary hostname.";
+						return array(
+							"message" => $prefix . "A SOA record must provide a valid FQDN as primary hostname.",
+							"code" => "RECORD_RHS_SOA_INVALID_PART_" . $i
+						);
 					}
 					break;
 				case 1:
 					if (filter_var($parts[$i], FILTER_VALIDATE_EMAIL) === false && preg_match(VALID_DOMAIN, $parts[$i]) === 0) {
-						return $prefix . "A SOA record must provide a valid email address as hostmaster.";
+						return array(
+							"message" => $prefix . "A SOA record must provide a valid email address as hostmaster.",
+							"code" => "RECORD_RHS_SOA_INVALID_PART_" . $i
+						);
 					}
 					break;
 				case 2:
@@ -466,7 +542,10 @@ class RecordValidator extends Validator {
 				case 5:
 				case 6:
 					if (!ctype_digit($parts[$i])) {
-						return "SOA record part $i must be a valid integer.";
+						return array(
+							"message" => "SOA record part $i must be a valid integer.",
+							"code" => "RECORD_RHS_SOA_INVALID_PART_" . $i
+						);
 					}
 					break;
 				}
@@ -481,29 +560,44 @@ class RecordValidator extends Validator {
 				$type = "TXT";
 			}
 			if (preg_match(VALID_QUOTED, $content) === 0) {
-				return $prefix . "A $type record must provide a valid quoted string.";
+				return array(
+					"message" => $prefix . "A $type record must provide a valid quoted string.",
+					"code" => "RECORD_RHS_INVALID_QUOTED_STRING"
+				);
 			}
 			break;
 		case "SSHFP":
 			$parts = explode(" ", $content);
 			if (count($parts) !== 3) {
-				return $prefix . "A SSHFP record must provide all 3 parts: <algorithm> <fp-type> <fingeprint>";
+				return array(
+					"message" => $prefix . "A SSHFP record must provide all 3 parts: <algorithm> <fp-type> <fingeprint>",
+					"code" => "RECORD_RHS_SSHFP_PARTS_MISSING"
+				);
 			}
 			for ($i = 0; $i < count($parts); $i++) {
 				switch ($i) {
 				case 0:
 					if ($parts[$i] != "1" || $parts[$i] != "2") {
-						return $prefix . "A SSHFP record must provide either 1 (RSA) or 2 (DSA) as algorithm.";
+						return array(
+							"message" => $prefix . "A SSHFP record must provide either 1 (RSA) or 2 (DSA) as algorithm.",
+							"code" => "RECORD_RHS_SSHFP_INVALID_PART_0"
+						);
 					}
 					break;
 				case 1:
 					if ($parts[$i] != "1") {
-						return $prefix . "A SSHFP record must provide 1 (SHA-1) as fp-type.";
+						return array(
+							"message" => $prefix . "A SSHFP record must provide 1 (SHA-1) as fp-type.",
+							"code" => "RECORD_RHS_SSHFP_INVALID_PART_1"
+						);
 					}
 					break;
 				case 2:
 					if (strlen($parts[$i]) !== 40) {
-						return $prefix . "A SSHFTP record must provide a fingerprint as a 40 character ASCII hexadecimal string.";
+						return array(
+							"message" => $prefix . "A SSHFP record must provide a fingerprint as a 40 character ASCII hexadecimal string.",
+							"code" => "RECORD_RHS_SSHFP_INVALID_PART_2"
+						);
 					}
 					break;
 				}
@@ -511,23 +605,35 @@ class RecordValidator extends Validator {
 			break;
 		case "SRV":
 			if (!isset($this->priority)) {
-				return $prefix . "A SRV record must also provide a priority.";
+				return array(
+					"message" => $prefix . "A SRV record must also provide a priority.",
+					"code" => "RECORD_RHS_MISSING_PRIORITY"
+				);
 			}
 			$parts = explode(" ", $content);
 			if (count($parts) !== 3) {
-				return $prefix . "A SRV record must provide all 3 parts: <weight> <port> <service>";
+				return array(
+					"message" => $prefix . "A SRV record must provide all 3 parts: <weight> <port> <service>",
+					"code" => "RECORD_RHS_SRV_PARTS_MISSING"
+				);
 			}
 			for ($i = 0; $i < count($parts); $i++) {
 				switch ($i) {
 				case 0:
 				case 1:
 					if (!ctype_digit($parts[$i])) {
-						return $prefix . "SRV record part $i must be a valid integer.";
+						return array(
+							"message" => $prefix . "SRV record part $i must be a valid integer.",
+							"code" => "RECORD_RHS_SRV_INVALID_PART_" . $i
+						);
 					}
 					break;
 				case 2:
 					if (preg_match(VALID_DOMAIN, $parts[$i]) === 0) {
-						return $prefix . "A SRV record must provide a valid FQDN as service.";
+						return array(
+							"message" => $prefix . "A SRV record must provide a valid FQDN as service.",
+							"code" => "RECORD_RHS_SRV_INVALID_PART_" . $i
+						);
 					}
 					break;
 				}

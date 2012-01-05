@@ -185,6 +185,7 @@ class ArpaFunctions {
 		if (empty($output)) {
 			$response->code = Response::NOTFOUND;
 			$response->error = "Could not find any records for given query.";
+			$response->error_detail = "ARPA_NO_RECORDS";
 			$out = false;
 		} else {
 			$response->code = Response::OK;
@@ -233,6 +234,7 @@ class ArpaFunctions {
 
 		$response->code = Response::NOTFOUND;
 		$response->error = "Could not find the Arpa zone for IP " . $identifier;
+		$response->error_detail = "ARPA_NO_ZONE_FOR_IP";
 		$out = false;
 		return $response;
 	}
@@ -243,6 +245,7 @@ class ArpaFunctions {
 		if (!empty($o)) {
 			$response->code = Response::CONFLICT;
 			$response->error = "Resource already exists";
+			$response->error_detail = "ARPA_ALREADY_EXISTS";
 			$out = false;
 			return $response;
 		}
@@ -255,6 +258,7 @@ class ArpaFunctions {
 		if (empty($o)) {
 			$response->code = Response::NOTFOUND;
 			$response->error = sprintf("Could not find Arpa zone for ip '%s'", $identifier);
+			$response->error_detail = "ARPA_ZONE_NOT_FOUND";
 			$out = false;
 			return $response;
 		}
@@ -292,6 +296,7 @@ class ArpaFunctions {
 		if (empty($o)) {
 			$response->code = Response::NOTFOUND;
 			$response->error = sprintf("Could not find Arpa zone for IP %s", $identifier);
+			$response->error_detail = "ARPA_ZONE_NOT_FOUND";
 			$out = false;
 			return $response;
 		}

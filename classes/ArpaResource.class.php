@@ -72,12 +72,14 @@ class ArpaResource extends TokenResource {
 				if (!isset($data->query)) {
 					$response->code = Response::BADREQUEST;
 					$response->error = "Query was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+					$response->error_detail = "ARPA_INVALID_QUERY";
 					return $response;
 				}
 
 				if (!$validator->validates()) {
 					$response->code = Response::BADREQUEST;
 					$response->error = $validator->getFormattedErrors();
+					$response->error_detail = $validator->getErrorDetails();
 					return $response;
 				}
 
@@ -90,6 +92,7 @@ class ArpaResource extends TokenResource {
 			if (!$validator->validates()) {
 				$response->code = Response::BADREQUEST;
 				$response->error = $validator->getFormattedErrors();
+				$response->error_detail = $validator->getErrorDetails();
 				return $response;
 			}
 
@@ -131,12 +134,14 @@ class ArpaResource extends TokenResource {
 		if ($data == null) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure the body is in valid format.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
 		if (empty($identifier) || !isset($data->reverse_dns)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier and/or reverse_dns were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
@@ -146,6 +151,7 @@ class ArpaResource extends TokenResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -176,6 +182,7 @@ class ArpaResource extends TokenResource {
 		if (empty($identifier)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier was missing or invalid.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
@@ -184,6 +191,7 @@ class ArpaResource extends TokenResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -221,9 +229,12 @@ class ArpaResource extends TokenResource {
 		if (empty($data) || !isset($data->arpa) || !is_array($data->arpa)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure that all mandatory properties have been set.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
+		Validator::resetCounter();
 
+		$details = array();
 		$output = array();
 		$i = 0;
 		foreach ($data->arpa as $d) {
@@ -238,6 +249,7 @@ class ArpaResource extends TokenResource {
 			if (!$validator->validates()) {
 				$output[] = sprintf("Validation errors in Arpa %d:", $i);
 				$output[] = $validator->getFormattedErrors(false);
+				$details[] = $validator->getErrorDetails();
 			}
 			continue;
 		}
@@ -249,6 +261,7 @@ class ArpaResource extends TokenResource {
 		} else {
 			$response->code = Response::BADREQUEST;
 			$response->error = implode("\n", $output);
+			$response->error_detail = $details;
 		}
 
 		return $response;

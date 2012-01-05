@@ -69,6 +69,7 @@ class AnonymousResource extends Resource {
 			} catch (Exception $e) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = $e;
+				$response->error_detail = "INTERNAL_SERVER_ERROR";
 				$logger->writeLog($response->error, $response->code);
 				return $response;
 			}
@@ -80,6 +81,7 @@ class AnonymousResource extends Resource {
 				$request->method,
 				$request->uri
 			);
+			$response->error_detail = "METHOD_NOT_ALLOWED";
 			$logger->writeLog($response->error, $resonse->code);
 			return $response;
 		}

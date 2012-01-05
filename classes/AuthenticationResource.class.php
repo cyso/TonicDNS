@@ -85,12 +85,14 @@ class AuthenticationResource extends AnonymousResource {
 		if ($data == null) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure the body is in valid format.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
 		if (!isset($data->username) || !isset($data->password)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Username and/or password was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
@@ -99,6 +101,7 @@ class AuthenticationResource extends AnonymousResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -111,6 +114,7 @@ class AuthenticationResource extends AnonymousResource {
 		if ($token == null) {
 			$response->code = Response::FORBIDDEN;
 			$response->error = "Username and/or password was invalid.";
+			$response->error_detail = "AUTH_INVALID_CREDENTIALS";
 			return $response;
 		}
 
@@ -146,6 +150,7 @@ class AuthenticationResource extends AnonymousResource {
 		if (empty($token)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Token was missing or invalid.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
@@ -155,6 +160,7 @@ class AuthenticationResource extends AnonymousResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -163,6 +169,7 @@ class AuthenticationResource extends AnonymousResource {
 		if ($t == null) {
 			$response->code = Response::FORBIDDEN;
 			$response->error = "Token was invalid.";
+			$response->error_detail = "AUTH_INVALID_TOKEN";
 			return $response;
 		}
 
@@ -198,6 +205,7 @@ class AuthenticationResource extends AnonymousResource {
 		if (!isset($token)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Token was missing or invalid.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
@@ -207,6 +215,7 @@ class AuthenticationResource extends AnonymousResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -214,13 +223,15 @@ class AuthenticationResource extends AnonymousResource {
 
 		if ($t == null) {
 			$response->code = Response::FORBIDDEN;
-			$response->body = array("error" => "Token was invalid.");
+			$response->error = "Token was invalid.";
+			$response->error_detail = "AUTH_INVALID_TOKEN";
 			return $response;
 		}
 
 		if (!$this->backend->destroyToken($t)) {
 			$response->code = Response::INTERNALSERVERERROR;
-			$response->body = array("error" => "Token could not be destroyed.");
+			$response->error = "Token could not be destroyed.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			return $response;
 		}
 

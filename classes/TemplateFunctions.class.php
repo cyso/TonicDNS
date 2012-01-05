@@ -27,6 +27,7 @@ class TemplateFunctions {
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			return $response;
 		}
 
@@ -38,6 +39,7 @@ class TemplateFunctions {
 		if ($result === false) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not query PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			return $response;
 		}
 
@@ -63,6 +65,7 @@ class TemplateFunctions {
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			return $response;
 		}
 
@@ -77,12 +80,14 @@ class TemplateFunctions {
 		if ($statement === false) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not query PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			return $response;
 		}
 
 		if ($statement->execute(array(":name" => $identifier)) === false) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not query PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			$out = array();
 			return $response;
 		}
@@ -123,6 +128,7 @@ class TemplateFunctions {
 		if (!empty($o)) {
 			$response->code = Response::CONFLICT;
 			$response->error = "Resource already exists";
+			$response->error_detail = "TEMPLATE_ALREADY_EXISTS";
 			$out = false;
 			return $response;
 		}
@@ -132,6 +138,7 @@ class TemplateFunctions {
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			$out = false;
 			return $response;
 		}
@@ -143,6 +150,7 @@ class TemplateFunctions {
 		if ($insert->execute(array(":name" => $data->identifier, ":descr" => $data->description)) === false) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Rolling back transaction, failed to insert template.";
+			$response->error_detail = "TEMPLATE_INSERT_FAILED";
 
 			$connection->rollback();
 			$out = false;
@@ -180,6 +188,7 @@ class TemplateFunctions {
 			if ($record->execute() === false) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = sprintf("Rolling back transaction, failed to insert template record - name: '%s', type: '%s', content: '%s', ttl: '%s', prio: '%s'", $r_name, $r_type, $r_content, $r_ttl, $r_prio);
+				$response->error_detail = "TEMPLATE_RECORD_INSERT_FAILED";
 
 				$connection->rollback();
 				$out = false;
@@ -215,6 +224,7 @@ class TemplateFunctions {
 		if (empty($o)) {
 			$response->code = Response::NOTFOUND;
 			$response->error = "Resource does not exist";
+			$response->error_detail = "TEMPLATE_DOES_NOT_EXIST";
 			$out = false;
 
 			return $response;
@@ -225,6 +235,7 @@ class TemplateFunctions {
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			$out = false;
 
 			return $response;
@@ -237,6 +248,7 @@ class TemplateFunctions {
 		if ($delete->execute(array(":name" => $identifier)) === false) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Rolling back transaction, failed to delete template.";
+			$response->error_detail = "TEMPLATE_DELETE_FAILED";
 
 			$connection->rollback();
 			$out = false;
