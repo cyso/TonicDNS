@@ -65,10 +65,13 @@ class RecordResource extends TokenResource {
 		if (empty($data) || (!isset($data->entries) && !isset($data->records))) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure that all mandatory properties have been set.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
+		Validator::resetCounter();
 
+		$details = array();
 		if (isset($data->entries) && is_array($data->entries)) {
 			$output = array();
 			$i = 0;
@@ -86,6 +89,7 @@ class RecordResource extends TokenResource {
 				if (!$validator->validates()) {
 					$output[] = sprintf("Validation errors in entry %d:", $i);
 					$output[] = $validator->getFormattedErrors(false);
+					$details[] = $validator->getErrorDetails();
 				}
 				continue;
 			}
@@ -107,6 +111,7 @@ class RecordResource extends TokenResource {
 				if (!$validator->validates()) {
 					$output[] = sprintf("Validation errors in record %d:", $i);
 					$output[] = $validator->getFormattedErrors(false);
+					$details[] = $validator->getErrorDetails();
 				}
 				continue;
 			}
@@ -119,6 +124,7 @@ class RecordResource extends TokenResource {
 		} else {
 			$response->code = Response::BADREQUEST;
 			$response->error = implode("\n", $output);
+			$response->error_detail = $details;
 		}
 
 		return $response;
