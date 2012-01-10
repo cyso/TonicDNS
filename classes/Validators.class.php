@@ -577,7 +577,7 @@ class RecordValidator extends Validator {
 			for ($i = 0; $i < count($parts); $i++) {
 				switch ($i) {
 				case 0:
-					if ($parts[$i] != "1" || $parts[$i] != "2") {
+					if ($parts[$i] != "1" && $parts[$i] != "2") {
 						return array(
 							"message" => $prefix . "A SSHFP record must provide either 1 (RSA) or 2 (DSA) as algorithm.",
 							"code" => "RECORD_RHS_SSHFP_INVALID_PART_0"
