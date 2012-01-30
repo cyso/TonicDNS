@@ -189,14 +189,14 @@ class Validator {
 
 						if (($result = call_user_func_array(array(&$this, $method), $params)) !== true) {
 							if (is_string($result)) {
-								$this->invalidate($property, $result);
+								$this->invalidate($property, $result, $code);
 							} else if (is_array($result)) {
 								if (isset($result['message']) && isset($result['code'])) {
 									$this->invalidate($property, $result['message'], $result['code']);
 								} else if (isset($result['message'])) {
 									$this->invalidate($property, $result['message'], $code);
 								} else {
-									$this->invalidate($property, implode("\n", $result, $code));
+									$this->invalidate($property, implode("\n", $result), $code);
 								}
 							} else {
 								$this->invalidate($property, $message, $code);
