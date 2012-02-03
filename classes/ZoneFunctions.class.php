@@ -382,10 +382,14 @@ class ZoneFunctions {
 			} else {
 				$r_ttl = PowerDNSConfig::DNS_DEFAULT_RECORD_TTL;
 			}
-			if (isset($record->priority)) {
-				$r_prio = $record->priority;
+			if (($record->type == "MX") || ($record->type == "SRV")) {
+				if (isset($record->priority)) {
+					$r_prio = $record->priority;
+				} else {
+					$r_prio = PowerDNSConfig::DNS_DEFAULT_RECORD_PRIORITY;
+				}
 			} else {
-				$r_prio = PowerDNSConfig::DNS_DEFAULT_RECORD_PRIORITY;
+				$r_prio = null;
 			}
 
 			if ($statement->execute() === false) {
@@ -583,9 +587,26 @@ class ZoneFunctions {
 		$statement->bindParam(":content", $r_content);
 		$statement->bindParam(":priority", $r_prio);
 
+		$statement_noprio = $connection->prepare(sprintf(
+			"DELETE FROM `%s` WHERE name = :name AND type = :type AND content = :content;", PowerDNSConfig::DB_RECORD_TABLE
+		));
+
+		$statement_noprio->bindParam(":name", $r_name);
+		$statement_noprio->bindParam(":type", $r_type);
+		$statement_noprio->bindParam(":content", $r_content);
+
 		foreach ($data->records as $record) {
-			if (!isset($record->name) || !isset($record->type) || !isset($record->priority) || !isset($record->content)) {
+			$stmt = $statement_noprio;
+			if (!isset($record->name) || !isset($record->type) || !isset($record->content)) {
 				continue;
+			}
+
+			if (($record->type == "MX") || ($record->type == "SRV")) {
+				if (!isset($record->priority)) {
+					continue;
+				} else {
+					$stmt = $statement;
+				}
 			}
 
 			$r_name = $record->name;
@@ -593,7 +614,7 @@ class ZoneFunctions {
 			$r_content = $record->content;
 			$r_prio = $record->priority;
 
-			if ($statement->execute() === false) {
+			if ($stmt->execute() === false) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = sprintf("Rolling back transaction, failed to delete zone record - name: '%s', type: '%s', prio: '%s'", $r_name, $r_type, $r_prio);
 				$response->error_detail = "RECORD_DELETE_FAILED";

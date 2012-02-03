@@ -322,7 +322,7 @@ class RecordValidator extends Validator {
 		),
 		"priority" => array(
 			"valid_priority" => array(
-				"rule" => VALID_INT,
+				"rule" => array("check_record_priority"),
 				"code" => "RECORD_INVALID_PRIORITY",
 				"message" => "Record priority is not valid. Must be an integer."
 			)
@@ -645,6 +645,20 @@ class RecordValidator extends Validator {
 
 		return true;
 	}
+
+	public function check_record_priority($content) {
+	  if (($this->type == "MX") || ($this->type == "SRV")) {
+			if (preg_match(VALID_INT, $content)) {
+				return true;
+			}
+		} else {
+			if (preg_match(VALID_INT, $content) || !isset($content)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 }
 
 class ArpaValidator extends Validator {
