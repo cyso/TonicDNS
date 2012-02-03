@@ -93,12 +93,14 @@ class ZoneResource extends TokenResource {
 				if (!isset($data->query)) {
 					$response->code = Response::BADREQUEST;
 					$response->error = "Query was missing. Ensure that the body is in valid format and all required parameters are present.";
+					$response->error_detail = "BODY_MALFORMED";
 					return $response;
 				}
 
 				if (!$validator->validates()) {
 					$response->code = Response::BADREQUEST;
 					$response->error = $validator->getFormattedErrors();
+					$response->error_detail = $validator->getErrorDetails();
 					return $response;
 				}
 
@@ -111,6 +113,7 @@ class ZoneResource extends TokenResource {
 			if (!$validator->validates()) {
 				$response->code = Response::BADREQUEST;
 				$response->error = $validator->getFormattedErrors();
+				$response->error_detail = $validator->getErrorDetails();
 				return $response;
 			}
 
@@ -167,12 +170,13 @@ class ZoneResource extends TokenResource {
 	 *
 	 *   508 - Invalid request, missing required parameters or input validation failed.
 	 *   500 - Failed to connect to database or query execution error.
-	 *   409 - Zone already exists.
+	 *   409 - Zone already exists, or trying to insert records into a SLAVE zone.
 	 *
 	 * Errors (request with identifier):
 	 *
 	 *   508 - Invalid request, missing required parameters or input validation failed.
 	 *   500 - Failed to connect to database or query execution error.
+	 *   409 - Cannot insert records into a SLAVE zone.
 	 *   404 - Could not find zone.
 	 *
 	 * @access public
@@ -187,12 +191,14 @@ class ZoneResource extends TokenResource {
 		if ($data == null) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure the body is in valid format.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
 		if ((!isset($data->name) || !isset($data->type)) && empty($identifier)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
@@ -204,6 +210,7 @@ class ZoneResource extends TokenResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -247,12 +254,14 @@ class ZoneResource extends TokenResource {
 		if ($data == null || empty($data)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure the body is in valid format, and that the body is not empty.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
 		if (empty($identifier)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier was missing or invalid. Ensure that the body is in valid format.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
@@ -262,6 +271,7 @@ class ZoneResource extends TokenResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -299,6 +309,7 @@ class ZoneResource extends TokenResource {
 	 *
 	 *   508 - Invalid request, missing required parameters or input validation failed.
 	 *   500 - Failed to connect to database or query execution error.
+	 *   409 - Cannot delete records from a SLAVE zone.
 	 *   404 - Could not find zone.
 	 *
 	 * Errors (request with identifier):
@@ -319,6 +330,7 @@ class ZoneResource extends TokenResource {
 		if (empty($identifier) && (empty($data) || !isset($data->name) || !isset($data->records) || empty($data->records))) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier and/or records were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
@@ -330,6 +342,7 @@ class ZoneResource extends TokenResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 

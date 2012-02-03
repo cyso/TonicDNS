@@ -70,6 +70,7 @@ class TemplateResource extends TokenResource {
 			if (!$validator->validates()) {
 				$response->code = Response::BADREQUEST;
 				$response->error = $validator->getFormattedErrors();
+				$response->error_detail = $validator->getErrorDetails();
 				return $response;
 			}
 
@@ -115,12 +116,14 @@ class TemplateResource extends TokenResource {
 		if ($data == null) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure the body is in valid format.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
 		if (!isset($data->identifier) || !isset($data->description) || !isset($data->entries) || empty($data->entries)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier, description and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
@@ -129,6 +132,7 @@ class TemplateResource extends TokenResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -174,12 +178,14 @@ class TemplateResource extends TokenResource {
 		if ($data == null) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure the body is in valid format.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
 		if (empty($identifier) || !isset($data->identifier) || !isset($data->entries) || empty($data->entries)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
@@ -188,6 +194,7 @@ class TemplateResource extends TokenResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -217,6 +224,7 @@ class TemplateResource extends TokenResource {
 		if (empty($identifier)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
@@ -226,6 +234,7 @@ class TemplateResource extends TokenResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
