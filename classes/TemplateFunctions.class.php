@@ -179,10 +179,14 @@ class TemplateFunctions {
 			} else {
 				$r_ttl = $entry->ttl;
 			}
-			if (!isset($entry->priority)) {
-				$r_prio = PowerDNSConfig::DNS_DEFAULT_RECORD_PRIORITY;
+			if (($entry->type == "MX") || ($entry->type == "SRV")) {
+				if (!isset($entry->priority)) {
+					$r_prio = PowerDNSConfig::DNS_DEFAULT_RECORD_PRIORITY;
+				} else {
+					$r_prio = $entry->priority;
+				}
 			} else {
-				$r_prio = $entry->priority;
+				$r_prio = null;
 			}
 
 			if ($record->execute() === false) {

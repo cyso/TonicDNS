@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS `zone_templ_records` (
   `type` varchar(6) NOT NULL,
   `content` varchar(255) NOT NULL,
   `ttl` bigint(20) NOT NULL,
-  `prio` bigint(20) NOT NULL,
+  `prio` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `zone_templ_id` (`zone_templ_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 ;
