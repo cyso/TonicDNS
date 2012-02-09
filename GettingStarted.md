@@ -116,7 +116,11 @@ For exact request and response message formats and error codes, see [TemplationR
 Create template
 ---------------
 
-Create a new DNS template using URI /template/:identifier.
+### API URI ###
+
+* /template/:identifier
+
+### Example ###
 
 Prepare a JSON file (template.json).
 
@@ -185,7 +189,7 @@ Retrieves all existing zone templates or a specific existing zone template.
 
 	* retrieving a specific DNS template.
 
-#### Retrieve all templates ####
+#### Example: Retrieve all templates ####
 
 ```bash
 $ curl -s -k -H "x-authentication-token: efb9fc406a15bf9bdc60f52b36c14bcc6a1fd041" \
@@ -203,7 +207,7 @@ $ curl -s -k -H "x-authentication-token: efb9fc406a15bf9bdc60f52b36c14bcc6a1fd04
 {"name":"example.com","type":"A","content":"192.168.0.100","ttl":"86400","priority":null}],"description":"sample2 template"}]
 ```
 
-#### Retrieve a specific template ####
+#### Example: Retrieve a specific template ####
 
 ```bash
 $ curl -s -k -H "x-authentication-token: efb9fc406a15bf9bdc60f52b36c14bcc6a1fd041" \
@@ -223,7 +227,7 @@ Updating an existing DNS template. This method will overwrite the entire templat
 
 ### API URI ###
 
-/template/:identifier
+* /template/:identifier
 
 ### Example ###
 
@@ -271,7 +275,7 @@ Delete template
 
 ### API URI ###
 
-/template/:identifier
+* /template/:identifier
 
 ### Example ###
 
@@ -291,7 +295,7 @@ Create zone
 
 ### API URI ###
 
-/zone 
+* /zone 
 
 ### Example ###
 
@@ -331,7 +335,7 @@ Retrieve zone
 
 ### API URI ###
 
-/zone
+* /zone
 	
 ### Example ###
 
@@ -349,9 +353,9 @@ Delete zone
 
 ### API URI ###
 
-/zone/:identifier
+* /zone/:identifier
 
-### Examples ###
+### Example ###
 
 ```bash
 $ curl -s -k -H "x-authentication-token: efb9fc406a15bf9bdc60f52b36c14bcc6a1fd041" \
@@ -371,7 +375,7 @@ Insert records into an existing DNS zone.
 
 ### API URI ###
 
-/zone/:identifier
+* /zone/:identifier
 
 ### Example ###
 
@@ -407,7 +411,7 @@ Retrieve records
 
 ### API URI ###
 
-/zone/:identifier
+* /zone/:identifier
 
 ### Example ###
 
@@ -439,7 +443,7 @@ Delete records from the zone.
 
 ### API URI ###
 
-/zone/:identifier
+* /zone/:identifier
 
 ### Example ###
 
@@ -476,8 +480,8 @@ You can retrieve single Arpa records by supplying its identifier (IP address), o
 
 ### API URI ###
 
-/arpa/?query=1.2.3.4/24
-/arpa/:identifier
+* /arpa/?query=1.2.3.4/24
+* /arpa/:identifier
 
 ### Example ###
 
@@ -493,7 +497,7 @@ Create Arpa
 
 ### API URI ###
 
-/arpa/:identifier
+* /arpa/:identifier
 
 ### Example ###
 
@@ -525,7 +529,7 @@ Delete an Arpa record.
 
 ### API URI ###
 
-/arpa/:identifier
+* /arpa/:identifier
 
 ### Example ###
 
