@@ -16,6 +16,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @package resources
+ * @license http://www.gnu.org/licenses/gpl-3.0.html
  */
 /**
  * Zone Resource.
@@ -30,8 +33,9 @@ class ZoneResource extends TokenResource {
 	 * If no identifier is specified and no body is supplied, all zones will be
 	 * retrieved without records.
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * [
 	 *      {
 	 *            "name": <string>,
@@ -41,14 +45,16 @@ class ZoneResource extends TokenResource {
 	 *            "notified_serial": <int optional>
 	 *      },0..n
 	 * ]
+	 * ~~~
 	 *
 	 * If a query is specified in the URL,  all zones matching the given wildcard
 	 * are returned. The * wildcard is supported.
 	 *
 	 * If an identifier is specified, one zone will be retrieved with records.
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * {
 	 *      "name": <string>,
 	 *      "type": MASTER|SLAVE|NATIVE,
@@ -63,17 +69,18 @@ class ZoneResource extends TokenResource {
 	 *              "change_date": <int optional>
 	 *      },0..n ]
 	 * }
+	 * ~~~
+	 * 
+	 * ### Errors (request without identifier): ###
 	 *
-	 * Errors (request without identifier):
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
+	 * ### Errors (request with identifier): ###
 	 *
-	 * Errors (request with identifier):
-	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   404 - Could not find zone.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 404 - Could not find zone.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -126,8 +133,9 @@ class ZoneResource extends TokenResource {
 	 *
 	 * If no identifier is specified, a new DNS zone is created.
 	 *
-	 * Request:
+	 * ### Request: ###
 	 *
+	 * ~~~
 	 * {
 	 *     "name": <string>,
 	 *     "type": MASTER|SLAVE|NATIVE,
@@ -143,15 +151,19 @@ class ZoneResource extends TokenResource {
 	 *             "priority": <int optional>
 	 *     },0..n ]
 	 * }
+	 * ~~~
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
 	 * If an identifier is specified, records will be inserted into an existing DNS zone.
 	 *
-	 * Request:
+	 * ### Request: ###
 	 *
+	 * ~~~
 	 * {
 	 *     "records": [ {
 	 *             "name": <string>,
@@ -161,23 +173,26 @@ class ZoneResource extends TokenResource {
 	 *             "priority": <int optional>
 	 *     },0..n ]
 	 * }
+	 * ~~~
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors (request without identifier):
+	 * ### Errors (request without identifier): ###
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   409 - Zone already exists, or trying to insert records into a SLAVE zone.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 409 - Zone already exists, or trying to insert records into a SLAVE zone.
 	 *
-	 * Errors (request with identifier):
+	 * ### Errors (request with identifier): ###
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   409 - Cannot insert records into a SLAVE zone.
-	 *   404 - Could not find zone.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 409 - Cannot insert records into a SLAVE zone.
+	 * * 404 - Could not find zone.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -225,22 +240,28 @@ class ZoneResource extends TokenResource {
 	/**
 	 * Update an existing DNS zone. Only works for zones, not records. At least one field has to be specified.
 	 *
-	 * Request:
+	 * ### Request: ###
 	 *
+	 * ~~~
 	 * {
 	 *     "name": <string>,
 	 *     "type": MASTER|SLAVE|NATIVE,
 	 *     "master": <ipv4 optional>,
 	 * }
-	 * Response:
+	 * ~~~
 	 *
+	 *
+	 * ### Response: ###
+	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors (request with identifier):
+	 * ### Errors (request with identifier): ###
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   404 - Could not find zone.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 404 - Could not find zone.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -283,14 +304,17 @@ class ZoneResource extends TokenResource {
 	 *
 	 * If an identifier is specified, the entire zone will be deleted.
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
 	 * If a body is specified, but no identifier, the specified entries will be deleted from the zone.
 	 *
-	 * Request:
+	 * ### Request: ###
 	 *
+	 * ~~~
 	 * {
 	 *     "name": <string>,
 	 *     "records": [ {
@@ -300,23 +324,26 @@ class ZoneResource extends TokenResource {
 	 *             "priority": <int>
 	 *     },1..n ]
 	 * }
+	 * ~~~
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors (request without identifier):
+	 * ### Errors (request without identifier): ###
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   409 - Cannot delete records from a SLAVE zone.
-	 *   404 - Could not find zone.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 409 - Cannot delete records from a SLAVE zone.
+	 * * 404 - Could not find zone.
 	 *
-	 * Errors (request with identifier):
+	 * ### Errors (request with identifier): ###
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   404 - Could not find zone.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 404 - Could not find zone.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters

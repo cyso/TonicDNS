@@ -16,6 +16,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @package resources
+ * @license http://www.gnu.org/licenses/gpl-3.0.html
  */
 /**
  * Template Resource.
@@ -27,8 +30,9 @@ class TemplateResource extends TokenResource {
 	/**
 	 * Retrieves an existing DNS template.
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * [
 	 *      {
 	 *            "identifier": <string>,
@@ -41,16 +45,17 @@ class TemplateResource extends TokenResource {
 	 *                  "priority": <int>
 	 *            },0..n ]
 	 *      },0..n
- 	 * ]
+	 * ]
+	 * ~~~
 	 *
-	 * Errors (request without identifier):
+	 * ### Errors (request without identifier): ###
 	 *
-	 *   500 - Failed to connect to database or query execution error.
+	 * * 500 - Failed to connect to database or query execution error.
 	 *
-	 * Errors (request with identifier):
+	 * ### Errors (request with identifier): ###
 	 *
-	 *   500 - Failed to connect to database or query execution error.
-	 *   404 - Could not find template.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 404 - Could not find template.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -81,8 +86,9 @@ class TemplateResource extends TokenResource {
 	/**
 	 * Create a new DNS template.
 	 *
-	 * Request:
+	 * ### Request: ###
 	 *
+	 * ~~~
 	 * {
 	 *      "identifier": <string>,
 	 *      "description": <string>,
@@ -94,16 +100,19 @@ class TemplateResource extends TokenResource {
 	 *            "priority": <int>
 	 *      },0..n ]
 	 * }
+	 * ~~~
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors:
+	 * ### Errors: ###
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   409 - Template already exists.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 409 - Template already exists.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -142,8 +151,9 @@ class TemplateResource extends TokenResource {
 	/**
 	 * Update an existing DNS template. This method will overwrite the entire Template.
 	 *
-	 * Request:
+	 * ### Request: ###
 	 *
+	 * ~~~
 	 * {
 	 *     "identifier": <string>,
 	 *     "description": <string>,
@@ -155,16 +165,19 @@ class TemplateResource extends TokenResource {
 	 *            "priority": <int optional>
 	 *     },0..n ]
 	 * }
+	 * ~~~
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors:
+	 * ### Errors: ###
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   404 - Could not find template.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 404 - Could not find template.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -204,13 +217,17 @@ class TemplateResource extends TokenResource {
 	/**
 	 * Delete an existing DNS template.
 	 *
-	 * Response: true
+	 * ### Response: ### 
 	 *
-	 * Errors:
+	 * ~~~
+	 * true
+	 * ~~~
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   404 - Could not find template.
+	 * ### Errors: ###
+	 *
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 404 - Could not find template.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
