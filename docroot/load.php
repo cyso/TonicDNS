@@ -19,12 +19,25 @@
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_once("load.php");
+// load Tonic library
+require_once __DIR__ . '/../lib/tonic.php';
 
-// handle request
-$request = new Request();
-$resource = $request->loadResource();
-$response = $resource->exec($request);
-$response->output();
+// load all config files
+$configs = glob(__DIR__ . "/../conf/*.php");
+foreach ($configs as $config) {
+	require_once $config;
+}
 
-?>
+// load all other libraries
+$libraries = glob(__DIR__ . "/../lib/*.php");
+foreach ($libraries as $library) {
+	// load library
+	require_once $library;
+}
+
+// load classes
+$classes = glob(__DIR__ . "/../classes/*.class.php");
+foreach ($classes as $class) {
+	// load class
+	require_once $class;
+}
