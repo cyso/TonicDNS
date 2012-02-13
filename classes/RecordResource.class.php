@@ -16,6 +16,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @package resources
+ * @license http://www.gnu.org/licenses/gpl-3.0.html
  */
 /**
  * Record Resource.
@@ -25,8 +28,9 @@ class RecordResource extends TokenResource {
 	/**
 	 * Validates a set of records.
 	 *
-	 * Request:
+	 * ### Request: ###
 	 *
+	 * ~~~
 	 * {
 	 * 		entries: [ {
 	 *              "name": <string>,
@@ -45,14 +49,17 @@ class RecordResource extends TokenResource {
 	 *              "change_date": <int optional>
 	 *      },0..n ]
 	 * }
+	 * ~~~
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors:
+	 * ### Errors: ###
 	 *
-	 * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters

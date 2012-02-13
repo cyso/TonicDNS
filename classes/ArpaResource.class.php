@@ -16,6 +16,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @package resources
+ * @license http://www.gnu.org/licenses/gpl-3.0.html
  */
 /**
  * Reverse DNS Resource.
@@ -32,8 +35,9 @@ class ArpaResource extends TokenResource {
 	 * If an identifier is specified, the reverse DNS record for one IP will be 
 	 * retrieved.
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * [
 	 *      {
 	 *            "name": <string>,
@@ -42,17 +46,18 @@ class ArpaResource extends TokenResource {
 	 *            "arpa_zone": <string>|null
 	 *      },0..n
 	 * ]
+	 * ~~~
 	 *
-	 * Errors (request without identifier):
+	 * ### Errors (request without identifier): ###
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
 	 *
-	 * Errors (request with identifier):
+	 * ### Errors (request with identifier): ###
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   404 - Could not find IP.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 404 - Could not find IP.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -101,26 +106,31 @@ class ArpaResource extends TokenResource {
 	}
 
 	/**
-	 * Inserts a new Arpa record in an existing Arpa zone. The record will be inserted in the
-	 * most specific Arpa zone available. If no zone is available, an error is returned. If a
-	 * record already exists, an error is returned.
+	 * Inserts a new Arpa record in an existing Arpa zone.
 	 *
-	 * Request:
+	 * The record will be inserted in the most specific Arpa zone available. If no zone is 
+	 * available, an error is returned. If a record already exists, an error is returned.
 	 *
+	 * ### Request: ###
+	 *
+	 * ~~~
 	 * {
 	 *     "reverse_dns": <string>,
 	 * }
+	 * ~~~
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors:
+	 * ### Errors: ###
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   409 - Record already exists, or tried to insert a record in a SALVE Arpa zone.
-	 *   404 - Could not find suitable zone.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 409 - Record already exists, or tried to insert a record in a SALVE Arpa zone.
+	 * * 404 - Could not find suitable zone.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -161,15 +171,17 @@ class ArpaResource extends TokenResource {
 	/**
 	 * Delete an existing Arpa record.
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors:
+	 * ### Errors: ###
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   404 - Could not find Arpa zone.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 404 - Could not find Arpa zone.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -201,22 +213,26 @@ class ArpaResource extends TokenResource {
 	/**
 	 * Validates a set of Arpa requests.
 	 *
-	 * Request:
+	 * ### Request: ###
 	 *
+	 * ~~~
 	 * {
 	 *     "arpa": [ {
 	 *         "identifier": <string>,
 	 *         "reverse_dns": <string>
 	 *     },0..n ]
 	 * }
+	 * ~~~
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors:
+	 * ### Errors: ###
 	 *
-	 * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
