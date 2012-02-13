@@ -3,7 +3,7 @@ Getting Started
 
 This document assumes you have some experience using REST APIs. All examples assume you use TonicDNS on a Linux machine, and use MySQL as your backend database. Examples will use cURL, you can find this tool in probably all repositories.
 
-Most of the other documentation is in the source files themselves. Look around in classess/*Resource.class.php. This document is by no means a complete reference on how to use TonicDNS, but it should provide enough examples to get you started and show you where to look for all possible methods.
+Most of the other documentation is in the source files themselves. Look around in classes/*Resource.class.php. This document is by no means a complete reference on how to use TonicDNS, but it should provide enough examples to get you started and show you where to look for all possible methods.
 
 
 How to get started
@@ -53,7 +53,7 @@ $ head -c 30 /dev/urandom | xxd -p
 3\. Create TonicDNS user
 ========================
 
-You can create seperate users to access TonicDNS.
+You can create separate users to access TonicDNS.
 
 Create user
 -----------
@@ -109,7 +109,7 @@ $ curl -k -H "x-authentication-token:efb9fc406a15bf9bdc60f52b36c14bcc6a1fd041" \
 5\. Zone templates
 ==================
 
-Zone templates are used to define the structure of a zone. When creating a zone, you can specify one or more template to apply to it. This copies the records from the template to the new zone, and resolves any variables in the template. Currently, the only supported variable is "[ZONE]", which will be resolved to the name of the zone that is being created.
+Zone templates are used to define the structure of a zone. When creating a zone, you can specify one or more templates to apply to it. This copies the records from the template to the new zone, and resolves any variables in the template. Currently, the only supported variable is "[ZONE]", which will be resolved to the name of the zone that is being created.
 
 For exact request and response message formats and error codes, see [TemplationResource][templateres].
 
@@ -476,7 +476,7 @@ The Arpa Resource can be used to conveniently manage reverse DNS. For exact requ
 Retrieve Arpa
 -------------
 
-You can retrieve single Arpa records by supplying its identifier (IP address), or query all Arpa records by providing a comma seperated string of single IPs or IP ranges in CIDR notation: "1.2.3.4,2.3.4.0/24".
+You can retrieve single Arpa records by supplying its identifier (IP address), or query all Arpa records by providing a comma separated string of single IPs or IP ranges in CIDR notation: "1.2.3.4,2.3.4.0/24".
 
 ### API URI ###
 
