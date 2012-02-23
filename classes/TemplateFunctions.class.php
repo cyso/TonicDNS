@@ -66,6 +66,7 @@ class TemplateFunctions {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
 			$response->error_detail = "INTERNAL_SERVER_ERROR";
+			$out = false;
 			return $response;
 		}
 
@@ -81,6 +82,7 @@ class TemplateFunctions {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not query PowerDNS server.";
 			$response->error_detail = "INTERNAL_SERVER_ERROR";
+			$out = false;
 			return $response;
 		}
 
@@ -226,11 +228,7 @@ class TemplateFunctions {
 		$response = TemplateFunctions::get_template($response, $identifier, $o);
 
 		if (empty($o)) {
-			$response->code = Response::NOTFOUND;
-			$response->error = "Resource does not exist";
-			$response->error_detail = "TEMPLATE_DOES_NOT_EXIST";
 			$out = false;
-
 			return $response;
 		}
 

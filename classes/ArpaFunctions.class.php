@@ -256,9 +256,10 @@ class ArpaFunctions {
 		ZoneFunctions::get_zone($response, $identifier, $o, false);
 
 		if (empty($o)) {
-			$response->code = Response::NOTFOUND;
-			$response->error = sprintf("Could not find Arpa zone for ip '%s'", $identifier);
-			$response->error_detail = "ARPA_ZONE_NOT_FOUND";
+			if ($response->code == Response::NOTFOUND) {
+				$response->error = sprintf("Could not find Arpa zone for ip '%s'", $identifier);
+				$response->error_detail = "ARPA_ZONE_NOT_FOUND";
+			}
 			$out = false;
 			return $response;
 		}
@@ -294,9 +295,6 @@ class ArpaFunctions {
 		ArpaFunctions::get_arpa($response, $identifier, $o, true);
 
 		if (empty($o)) {
-			$response->code = Response::NOTFOUND;
-			$response->error = sprintf("Could not find Arpa zone for IP %s", $identifier);
-			$response->error_detail = "ARPA_ZONE_NOT_FOUND";
 			$out = false;
 			return $response;
 		}

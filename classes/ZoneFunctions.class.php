@@ -290,9 +290,6 @@ class ZoneFunctions {
 			ZoneFunctions::get_zone($response, $identifier, $o, false);
 
 			if (empty($o)) {
-				$response->code = Response::NOTFOUND;
-				$response->error = "Zone does not exist";
-				$response->error_detail = "ZONE_DOES_NOT_EXIST";
 				$out = false;
 				return $response;
 			}
@@ -422,9 +419,6 @@ class ZoneFunctions {
 		ZoneFunctions::get_zone($response, $identifier, $o, false);
 
 		if (empty($o)) {
-			$response->code = Response::NOTFOUND;
-			$response->error = "Resource does not exist";
-			$response->error_detail = "ZONE_DOES_NOT_EXIST";
 			$out = false;
 			return $response;
 		}
@@ -499,9 +493,6 @@ class ZoneFunctions {
 		ZoneFunctions::get_zone($response, $identifier, $o, false);
 
 		if (empty($o)) {
-			$response->code = Response::NOTFOUND;
-			$response->error = "Resource does not exist";
-			$response->error_detail = "ZONE_DOES_NOT_EXIST";
 			$out = false;
 			return $response;
 		}
@@ -549,9 +540,6 @@ class ZoneFunctions {
 		ZoneFunctions::get_zone($response, $identifier, $o, false);
 
 		if (empty($o)) {
-			$response->code = Response::NOTFOUND;
-			$response->error = "Resource does not exist";
-			$response->error_detail = "ZONE_DOES_NOT_EXIST";
 			$out = false;
 			return $response;
 		}
