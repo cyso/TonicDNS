@@ -137,6 +137,7 @@ class TemplateResource extends TokenResource {
 		}
 
 		$validator = new TemplateValidator($data);
+		$validator->mode_override = "add";
 
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;

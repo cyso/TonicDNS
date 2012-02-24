@@ -219,7 +219,7 @@ class HelperFunctions {
 		return $out;
 	}
 
-	public function has_records_of_type($name, $types = array()) {
+	public function has_records_of_type($name, $types = array(), $filters = array()) {
 		try {
 			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
 		} catch (PDOException $e) {
@@ -238,6 +238,21 @@ class HelperFunctions {
 			} else {
 				$clause[] = "type = ?";
 				$parameters[] = $t;
+			}
+		}
+
+		foreach ($filters as $f) {
+			if ($f['type'] == "MX" || $f['type'] == "SRV") {
+				$clause[] = sprintf("id NOT IN (SELECT id FROM %s WHERE name = ? AND type = ? AND content = ? AND prio = ?)", PowerDNSConfig::DB_RECORD_TABLE);
+				$parameters[] = $f['name'];
+				$parameters[] = $f['type'];
+				$parameters[] = $f['content'];
+				$parameters[] = $f['priority'];
+			} else {
+				$clause[] = sprintf("id NOT IN (SELECT id FROM %s WHERE name = ? AND type = ? AND content = ?)", PowerDNSConfig::DB_RECORD_TABLE);
+				$parameters[] = $f['name'];
+				$parameters[] = $f['type'];
+				$parameters[] = $f['content'];
 			}
 		}
 

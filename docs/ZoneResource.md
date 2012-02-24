@@ -138,7 +138,16 @@ POST
 ----
 
 
-Update an existing DNS zone. Only works for zones, not records. At least one field has to be specified.
+Update an existing DNS zone. Also allows adding and deleting records in one transaction.
+
+Requires that at least one DNS Zone field be modified.
+
+Addition and deletion of records is optional. If specified, the requirement that at least one DNS Zone field has to be modified
+is lifted.
+
+If both DNS zone modifications and record modifications are specified, the DNS zone modification is carried out first. If this fails,
+the entire transaction will abort. If the zone type changes from MASTER or NATIVE to SLAVE, and records are specified to added or
+deleted, this will also result in an error, because SLAVE zones are not allowed to modify records.
 
 ### Request: ###
 
@@ -147,6 +156,13 @@ Update an existing DNS zone. Only works for zones, not records. At least one fie
     "name": <string>,
     "type": MASTER|SLAVE|NATIVE,
     "master": <ipv4 optional>,
+    "records": [ {
+            "name": <string>,
+            "type": <string>,
+            "content": <string>,
+            "priority": <int>,
+            "mode": add|delete       # optional, default = add
+    },0..n ]
 }
 ```
 

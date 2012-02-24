@@ -102,9 +102,8 @@ class TemplateValidator extends Validator {
 
 		$errors = array();
 		foreach ($entries as $entry) {
-			$record = new RecordValidator();
+			$record = new RecordValidator($entry);
 			$record->record_type = "TEMPLATE";
-			$record->initialize($entry);
 
 			if (!$record->validates()) {
 				$errors[] = $record->getFormattedErrors();
@@ -121,6 +120,8 @@ class TemplateValidator extends Validator {
 }
 
 class ZoneValidator extends Validator {
+	public $mode_override = null;
+
 	protected $rules = array(
 		"identifier" => array(
 			"valid_identifier" => array(
@@ -207,6 +208,12 @@ class ZoneValidator extends Validator {
 		if ($value == "SLAVE" && !isset($this->master)) {
 			return "Zone type is not valid. If set to SLAVE, a master IP must be specified.";
 		}
+		if ($value == "SLAVE" && isset($this->records)) {
+			return array(
+				"message" => "Cannot modify records. Zone type is being changes to SLAVE.",
+				"code" => "ZONE_IS_SLAVE"
+			);
+		}
 		return true;
 	}
 
@@ -261,8 +268,11 @@ class ZoneValidator extends Validator {
 
 		$errors = array();
 		foreach ($records as $entry) {
-			$record = new RecordValidator();
-			$record->initialize($entry);
+			$record = new RecordValidator($entry);
+
+			if (!empty($this->mode_override)) {
+				$record->mode = $this->mode_override;
+			}
 
 			if (!$record->validates()) {
 				$errors[] = $record->getFormattedErrors();
@@ -280,15 +290,28 @@ class ZoneValidator extends Validator {
 
 class RecordValidator extends Validator {
 	public $record_type = "NORMAL";
+	public $record_mode = "ADD";
 	public static $cnames = array();
 	public static $others = array();
+	public static $deletions = array();
 
 	public function __construct($data = null) {
 		$r = VALID_RECORD_TYPE;
 		$r = str_replace(array("#", "^", "$"), array("", "", ""), $r);
 		$records = explode("|", $r);
 		$this->rules['type']['valid_type']['message'] .= implode(", ", $records) . ".";
+
 		parent::__construct($data);
+	}
+
+	public function initialize($data = null) {
+		if (is_object($data) && $data instanceof StdClass && isset($data->mode) && $data->mode === "delete") {
+			$this->record_mode = "DELETE";
+		} else if (is_array($data) && isset($data['mode']) && $data['mode'] === "delete") {
+			$this->record_mode = "DELETE";
+		}
+
+		parent::initialize($data);
 	}
 
 	protected $rules = array(
@@ -297,6 +320,13 @@ class RecordValidator extends Validator {
 				"rule" => array("check_record_name"),
 				"code" => "RECORD_INVALID_NAME",
 				"message" => "Record name is not valid. Must start with an alphanumeric character, and may only contain alphanumeric characters and dots (.). Must end in a valid tld. May start with '*.' to indicate a wildcard domain."
+			)
+		),
+		"priority" => array(
+			"valid_priority" => array(
+				"rule" => array("check_record_priority"),
+				"code" => "RECORD_INVALID_PRIORITY",
+				"message" => "Record priority is not valid. Must be an integer."
 			)
 		),
 		"type" => array(
@@ -318,13 +348,6 @@ class RecordValidator extends Validator {
 				"rule" => VALID_INT,
 				"code" => "RECORD_INVALID_TTL",
 				"message" => "Record TTL is not valid. Must be an integer."
-			)
-		),
-		"priority" => array(
-			"valid_priority" => array(
-				"rule" => array("check_record_priority"),
-				"code" => "RECORD_INVALID_PRIORITY",
-				"message" => "Record priority is not valid. Must be an integer."
 			)
 		),
 		"change_date" => array(
@@ -357,35 +380,53 @@ class RecordValidator extends Validator {
 		if (preg_match(VALID_RECORD_TYPE, $content) === 0) {
 			return false;
 		}
+		if ($this->record_mode == "ADD") {
+			if ($this->type != 'CNAME' && in_array($this->name, RecordValidator::$cnames)) {
+				return array(
+					"message" => sprintf("Cannot add a new record of type %s when a CNAME record is being inserted for %s", $this->type, $this->name),
+					"code" => "RECORD_CNAME_ALREADY_INSERT"
+				);
+			} else if ($this->type == 'CNAME' && in_array($this->name, RecordValidator::$others)) {
+				return array(
+					"message" => sprintf("Cannot add a new CNAME record when a record of another type is being inserted for %s", $this->name),
+					"code" => "RECORD_CNAME_OTHER_INSERT"
+				);
+			}
 
-		if ($this->type != 'CNAME' && in_array($this->name, RecordValidator::$cnames)) {
-			return array(
-				"message" => sprintf("Cannot add a new record of type %s when a CNAME record is being inserted for %s", $this->type, $this->name),
-				"code" => "RECORD_CNAME_ALREADY_INSERT"
-			);
-		} else if ($this->type == 'CNAME' && in_array($this->name, RecordValidator::$others)) {
-			return array(
-				"message" => sprintf("Cannot add a new CNAME record when a record of another type is being inserted for %s", $this->name),
-				"code" => "RECORD_CNAME_OTHER_INSERT"
-			);
+			if ($this->type != 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("CNAME"), RecordValidator::$deletions) != false) {
+				return array(
+					"message" => sprintf("Cannot add a new record of type %s when a CNAME record is already present for %s", $this->type, $this->name),
+					"code" => "RECORD_CNAME_ALREADY_PRESENT"
+				);
+			} else if ($this->type == 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("!CNAME"), RecordValidator::$deletions) != false) {
+				return array(
+					"message" => sprintf("Cannot add a new CNAME record when a record of another type is already present for %s", $this->name),
+					"code" => "RECORD_CNAME_OTHER_PRESENT"
+				);
+			}
+
+			if ($this->type == 'CNAME') {
+				RecordValidator::$cnames[] = $this->name;
+			} else {
+				RecordValidator::$others[] = $this->name;
+			}
 		}
 
-		if ($this->type != 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("CNAME")) != false) {
-			return array(
-				"message" => sprintf("Cannot add a new record of type %s when a CNAME record is already present for %s", $this->type, $this->name),
-				"code" => "RECORD_CNAME_ALREADY_PRESENT"
-			);
-		} else if ($this->type == 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("!CNAME")) != false) {
-			return array(
-				"message" => sprintf("Cannot add a new CNAME record when a record of another type is already present for %s", $this->name),
-				"code" => "RECORD_CNAME_OTHER_PRESENT"
-			);
-		}
-
-		if ($this->type == 'CNAME') {
-			RecordValidator::$cnames[] = $this->name;
-		} else {
-			RecordValidator::$others[] = $this->name;
+		if ($this->record_mode == "DELETE") {
+			if ($this->type == "MX" || $this->type == "SRV") {
+				RecordValidator::$deletions[] = array(
+					"name" => $this->name,
+					"type" => $this->type,
+					"content" => $this->content,
+					"priority" => $this->priority,
+				);
+			} else {
+				RecordValidator::$deletions[] = array(
+					"name" => $this->name,
+					"type" => $this->type,
+					"content" => $this->content,
+				);
+			}
 		}
 		return true;
 	}

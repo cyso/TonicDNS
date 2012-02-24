@@ -18,6 +18,7 @@ Validates a set of records.
              "ttl": <int optional>,
              "priority: <int optional>,
              "change_date": <int optional>
+             "mode": add|delete              # default = add
      },0..n ],
 		records: [ {
              "name": <string>,
@@ -26,7 +27,8 @@ Validates a set of records.
              "ttl": <int optional>,
              "priority: <int optional>,
              "change_date": <int optional>
-     },0..n ]
+             "mode": add|delete              # default = add
+     },0..n ],
 }
 ```
 
