@@ -11,7 +11,7 @@ Validates a set of records.
 
 ```json
 {
-		entries: [ {
+     entries: [ {
              "name": <string>,
              "type": <string>,
              "content": <string>,
@@ -20,7 +20,7 @@ Validates a set of records.
              "change_date": <int optional>
              "mode": add|delete              # default = add
      },0..n ],
-		records: [ {
+     records: [ {
              "name": <string>,
              "type": <string>,
              "content": <string>,

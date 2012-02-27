@@ -32,7 +32,7 @@ class RecordResource extends TokenResource {
 	 *
 	 * ~~~
 	 * {
-	 * 		entries: [ {
+	 *      entries: [ {
 	 *              "name": <string>,
 	 *              "type": <string>,
 	 *              "content": <string>,
@@ -41,7 +41,7 @@ class RecordResource extends TokenResource {
 	 *              "change_date": <int optional>
 	 *              "mode": add|delete              # default = add
 	 *      },0..n ],
-	 * 		records: [ {
+	 *      records: [ {
 	 *              "name": <string>,
 	 *              "type": <string>,
 	 *              "content": <string>,

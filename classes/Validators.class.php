@@ -17,7 +17,6 @@
  * You should have received a copy of the GNU General Public License
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 define("VALID_NOTEMPTY", "#^.+$#");
 define("VALID_INT", "#^[0-9]+$#");
 define("VALID_NAME", "#^[\w_-]+$#");
@@ -30,10 +29,11 @@ if (ValidatorConfig::BIND_COMPATABILITY === true) {
 } else {
 	define("VALID_DOMAIN", "#^(?:[A-Z0-9](?:[A-Z0-9\-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}$#i");
 }
+define("VALID_TEMPLATE_DOMAIN", "#^(?:(?:[A-Z0-9_](?:[A-Z0-9\-_]{0,61}[A-Z0-9])?\.)*(?:[A-Z]{2,6}|\[ZONE\])|(?:\[ZONE\]))$#i");
 define("VALID_QUERY", "#^[a-zA-Z0-9\-\.*]+$#");
 define("VALID_RANGE_QUERY", "#^[a-zA-Z0-9\-\.:*,/]+|$#");
 define("VALID_RECORD_NAME", "#^(?:\*\.)?(?:[A-Z0-9_](?:[A-Z0-9\-_]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}$#i");
-define("VALID_TEMPLATE_NAME", "#(?:\*\.)?(?:[A-Z0-9_\[](?:[A-Z0-9\-_]{0,61}[A-Z0-9\]])?\.)+(?:[A-Z]{2,6}|\[ZONE\])|(?:\[ZONE\])#i");
+define("VALID_TEMPLATE_NAME", "#^(?:(?:\*\.)?(?:[A-Z0-9_](?:[A-Z0-9\-_]{0,61}[A-Z0-9])?\.)*(?:[A-Z]{2,6}|\[ZONE\])|(?:\[ZONE\]))$#i");
 define("VALID_RECORD_TYPE", "#^A|AAAA|CNAME|MX|NAPTR|NS|PTR|RP|SOA|SPF|SSHFP|SRV|TXT$#");
 define("VALID_IPV4", "#^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$#");
 define("VALID_IPV6", "#^(?:(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}|(?=(?:[A-F0-9]{0,4}:){0,7}[A-F0-9]{0,4}$)(([0-9A-F]{1,4}:){1,7}|:)((:[0-9A-F]{1,4}){1,7}|:))$#i");
@@ -494,7 +494,12 @@ class RecordValidator extends Validator {
 			if (!isset($type)) {
 				$type = "CNAME";
 			}
-			if (preg_match(VALID_DOMAIN, $content) === 0) {
+			if ($this->record_type === "TEMPLATE" && preg_match(VALID_TEMPLATE_DOMAIN, $content) === 0) {
+				return array(
+					"message" => $prefix . "A $type template record must contain a valid FQDN without trailing dot. May also end with [ZONE].",
+					"code" => "RECORD_RHS_INVALID_FQDN"
+				);
+			} else if ($this->record_type !== "TEMPLATE" && preg_match(VALID_DOMAIN, $content) === 0) {
 				return array(
 					"message" => $prefix . "A $type record must contain a valid FQDN without trailing dot.",
 					"code" => "RECORD_RHS_INVALID_FQDN"
@@ -549,17 +554,33 @@ class RecordValidator extends Validator {
 					"code" => "RECORD_RHS_RP_PARTS_MISSING"
 				);
 			}
-			if (preg_match(VALID_DOMAIN, $parts[0]) === 0) {
-				return array(
-					"message" => $prefix . "A RP records mailbox name must be an email address with the at-sign replaced by a dot (.).",
-					"code" => "RECORD_RHS_RP_INVALID_PART_0"
-				);
-			}
-			if (preg_match(VALID_DOMAIN, $parts[1]) === 0) {
-				return array(
-					"message" => $prefix . "A RP records more-info pointer must be a valid FQDN.",
-					"code" => "RECORD_RHS_RP_INVALID_PART_1"
-				);
+			if ($this->record_type === "TEMPLATE") {
+				if (preg_match(VALID_TEMPLATE_DOMAIN, $parts[0]) === 0) {
+					return array(
+						"message" => $prefix . "A RP records mailbox name must be an email address with the at-sign replaced by a dot (.). May also end with [ZONE]",
+						"code" => "RECORD_RHS_RP_INVALID_PART_0"
+					);
+				}
+				if (preg_match(VALID_TEMPLATE_DOMAIN, $parts[1]) === 0) {
+					return array(
+						"message" => $prefix . "A RP records more-info pointer must be a valid FQDN. May also end with [ZONE]",
+						"code" => "RECORD_RHS_RP_INVALID_PART_1"
+					);
+				}
+			} else {
+				if (preg_match(VALID_DOMAIN, $parts[0]) === 0) {
+					return array(
+						"message" => $prefix . "A RP records mailbox name must be an email address with the at-sign replaced by a dot (.).",
+						"code" => "RECORD_RHS_RP_INVALID_PART_0"
+					);
+				}
+				if (preg_match(VALID_DOMAIN, $parts[1]) === 0) {
+					return array(
+						"message" => $prefix . "A RP records more-info pointer must be a valid FQDN.",
+						"code" => "RECORD_RHS_RP_INVALID_PART_1"
+					);
+				}
+
 			}
 			break;
 		case "SOA":
@@ -681,7 +702,12 @@ class RecordValidator extends Validator {
 					}
 					break;
 				case 2:
-					if (preg_match(VALID_DOMAIN, $parts[$i]) === 0) {
+					if ($this->record_type === "TEMPLATE" && preg_match(VALID_TEMPLATE_DOMAIN, $parts[$i]) === 0) {
+						return array(
+							"message" => $prefix . "A SRV record must provide a valid FQDN as service. May also end with [ZONE]",
+							"code" => "RECORD_RHS_SRV_INVALID_PART_" . $i
+						);
+					} else if ($this->record_type !== "TEMPLATE" && preg_match(VALID_DOMAIN, $parts[$i]) === 0) {
 						return array(
 							"message" => $prefix . "A SRV record must provide a valid FQDN as service.",
 							"code" => "RECORD_RHS_SRV_INVALID_PART_" . $i
