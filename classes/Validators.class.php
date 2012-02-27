@@ -319,7 +319,7 @@ class RecordValidator extends Validator {
 			"valid_name" => array(
 				"rule" => array("check_record_name"),
 				"code" => "RECORD_INVALID_NAME",
-				"message" => "Record name is not valid. Must start with an alphanumeric character, and may only contain alphanumeric characters and dots (.). Must end in a valid tld. May start with '*.' to indicate a wildcard domain."
+				"message" => "Record name is not valid. Must start with an alphanumeric character, and may only contain alphanumeric characters and dots (.). Must end in a valid tld. May start with '*.' to indicate a wildcard domain. Subdomains must be 61 characters or less."
 			)
 		),
 		"priority" => array(
@@ -362,18 +362,22 @@ class RecordValidator extends Validator {
 
 	public function check_record_name($content) {
 		if ($this->record_type === "TEMPLATE") {
-			if (preg_match(VALID_TEMPLATE_NAME, $content) === 1) {
-				return true;
-			} else {
+			if (preg_match(VALID_TEMPLATE_NAME, $content) !== 1) {
 				return "Template record name is not valid. Must start with an alphanumeric character, and may only contain alphanumeric characters and dots (.). Must end in a valid tld or '[ZONE]'. May start with '*.' to indicate a wildcard domain.";
 			}
+			if (strlen($content) > 127) {
+				return "Template record name is too long, must be less than 127 characters.";
+			}
 		} else {
-			if (preg_match(VALID_RECORD_NAME, $content) === 1) {
-				return true;
-			} else {
-				return "Record name is not valid. Must start with an alphanumeric character, and may only contain alphanumeric characters and dots (.). Must end in a valid tld. May start with '*.' to indicate a wildcard domain.";
+			if (preg_match(VALID_RECORD_NAME, $content) !== 1) {
+				return "Record name is not valid. Must start with an alphanumeric character, and may only contain alphanumeric characters and dots (.). Must end in a valid tld. May start with '*.' to indicate a wildcard domain. Subdomains must be 61 characters or less.";
+			}
+			if (strlen($content) > 253) {
+				return "Record name is too long, must be less than 253 characters.";
 			}
 		}
+
+		return true;
 	}
 
 	public function check_record_type($content) {
@@ -442,6 +446,13 @@ class RecordValidator extends Validator {
 
 		if (!isset($this->type) || empty($this->type)) {
 			return false;
+		}
+
+		if (strlen($content) > 4096) {
+			return array(
+				"message" => $prefix . "Content is too long, must be less than 4096 characters.",
+				"code" => "RECORD_RHS_TOO_LONG"
+			);
 		}
 
 		switch ($this->type) {

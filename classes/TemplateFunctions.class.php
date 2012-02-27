@@ -193,7 +193,7 @@ class TemplateFunctions {
 
 			if ($record->execute() === false) {
 				$response->code = Response::INTERNALSERVERERROR;
-				$response->error = sprintf("Rolling back transaction, failed to insert template record - name: '%s', type: '%s', content: '%s', ttl: '%s', prio: '%s'", $r_name, $r_type, $r_content, $r_ttl, $r_prio);
+				$response->error = sprintf("Rolling back transaction, failed to insert template record - name: '%s', type: '%s', content: '%s', ttl: '%s', prio: '%s', ERROR: %s", $r_name, $r_type, $r_content, $r_ttl, $r_prio, var_export($record->errorInfo(), true));
 				$response->error_detail = "TEMPLATE_RECORD_INSERT_FAILED";
 
 				$connection->rollback();
