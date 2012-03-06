@@ -55,6 +55,10 @@ class AnonymousResource extends Resource {
 			$logger = new Logger($request->uri, $request->method, "Anonymous");
 		}
 
+		if (!empty($data) && $data instanceof StdClass && isset($data->password)) {
+			$data->password = "***FILTERED***";
+		}
+
 		$logger->setInput(json_encode($data));
 
 		if (method_exists($this, $request->method)) {

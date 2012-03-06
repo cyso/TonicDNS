@@ -41,7 +41,12 @@ class TokenResource extends Resource {
 		$response->addHeader('X-Resource', get_class($this));
 
 		$logger = new Logger($request->uri, $request->method, "Anonymous");
-		$logger->setInput(json_encode($request->parseData()));
+		$data = $request->parseData();
+		if (!empty($data) && $data instanceof StdClass && isset($data->password)) {
+			$data->password = "***FILTERED***";
+		}
+
+		$logger->setInput(json_encode($data));
 
 		if (!isset($request->requestToken) || empty($request->requestToken)) {
 			$response->code = Response::UNAUTHORIZED;
