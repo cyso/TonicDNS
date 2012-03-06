@@ -397,5 +397,60 @@ class ZoneResource extends TokenResource {
 			return ZoneFunctions::delete_records($response, $data->name, $data);
 		}
 	}
+
+	/**
+	 * Validates the properties of a zone.
+	 *
+	 * To validator Zone records, use the RecordResource.
+	 *
+	 * ### Request: ###
+	 *
+	 * ~~~
+	 * {
+	 *     "name": <string>,
+	 *     "type": MASTER|SLAVE|NATIVE,
+	 *     "master": <ipv4 optional>
+	 * }
+	 * ~~~
+	 *
+	 * ### Response: ###
+	 *
+	 * ~~~
+	 * true
+	 * ~~~
+	 *
+	 * ### Errors: ###
+	 *
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 *
+	 * @access public
+	 * @param mixed $request Request parameters
+	 * @return Response True if record is valid, error message with parse errors otherwise.
+	 */
+	public function validate($request) {
+		$response = new FormattedResponse($request);
+		$data = $request->parseData();
+
+		if (empty($data) || !isset($data->name)) {
+			$response->code = Response::BADREQUEST;
+			$response->error = "Request body was malformed. Ensure that all mandatory properties have been set.";
+			$response->error_detail = "BODY_MALFORMED";
+			return $response;
+		}
+
+		$validator = new ZoneValidator($data);
+
+		if ($validator->validates()) {
+			$response->code = Response::OK;
+			$response->body = true;
+			$response->log_message = "Zone was successfully validated.";
+		} else {
+			$response->code = Response::BADREQUEST;
+			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
+		}
+
+		return $response;
+	}
 }
 ?>

@@ -258,6 +258,60 @@ class TemplateResource extends TokenResource {
 
 		return TemplateFunctions::delete_template($response, $identifier);
 	}
+
+	/**
+	 * Validates the properties of a template.
+	 *
+	 * To validator Template records, use the RecordResource.
+	 *
+	 * ### Request: ###
+	 *
+	 * ~~~
+	 * {
+	 *     "identifier": <string>,
+	 *     "description": <string>
+	 * }
+	 * ~~~
+	 *
+	 * ### Response: ###
+	 *
+	 * ~~~
+	 * true
+	 * ~~~
+	 *
+	 * ### Errors: ###
+	 *
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 *
+	 * @access public
+	 * @param mixed $request Request parameters
+	 * @return Response True if record is valid, error message with parse errors otherwise.
+	 */
+	public function validate($request) {
+		$response = new FormattedResponse($request);
+		$data = $request->parseData();
+
+		if (empty($data) || !isset($data->identifier) || !isset($data->description)) {
+			$response->code = Response::BADREQUEST;
+			$response->error = "Request body was malformed. Ensure that all mandatory properties have been set.";
+			$response->error_detail = "BODY_MALFORMED";
+			return $response;
+		}
+
+		$validator = new TemplateValidator($data);
+
+		if ($validator->validates()) {
+			$response->code = Response::OK;
+			$response->body = true;
+			$response->log_message = "Template was successfully validated.";
+		} else {
+			$response->code = Response::BADREQUEST;
+			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
+		}
+
+		return $response;
+	}
 }
 
 ?>
