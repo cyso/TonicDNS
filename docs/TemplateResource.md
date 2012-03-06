@@ -132,3 +132,33 @@ true
 	 
 
 
+VALIDATE
+--------
+
+
+Validates the properties of a template.
+
+To validator Template records, use the RecordResource.
+
+### Request: ###
+
+```json
+{
+    "identifier": <string>,
+    "description": <string>
+}
+```
+
+### Response: ###
+
+```
+true
+```
+
+### Errors: ###
+
+* 508 - Invalid request, missing required parameters or input validation failed.
+
+	 
+
+

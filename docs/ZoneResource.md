@@ -234,3 +234,34 @@ true
 	 
 
 
+VALIDATE
+--------
+
+
+Validates the properties of a zone.
+
+To validator Zone records, use the RecordResource.
+
+### Request: ###
+
+```json
+{
+    "name": <string>,
+    "type": MASTER|SLAVE|NATIVE,
+    "master": <ipv4 optional>
+}
+```
+
+### Response: ###
+
+```
+true
+```
+
+### Errors: ###
+
+* 508 - Invalid request, missing required parameters or input validation failed.
+
+	 
+
+
