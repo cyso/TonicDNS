@@ -21,7 +21,7 @@ define("VALID_NOTEMPTY", "#^.+$#");
 define("VALID_INT", "#^[0-9]+$#");
 define("VALID_NAME", "#^[\w_-]+$#");
 define("VALID_STRING", "#^[\w -+.]*$#");
-define("VALID_QUOTED", "#^[\"']{1}.*[\"']{1}$#");
+define("VALID_QUOTED", "#^[\"]{1}.*[\"]{1}$#");
 define("VALID_TOKEN", "#^[0-9a-f]{40}$#");
 define("VALID_ZONE_TYPE", "#MASTER|SLAVE|NATIVE#");
 if (ValidatorConfig::BIND_COMPATABILITY === true) {
