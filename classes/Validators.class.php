@@ -585,9 +585,11 @@ class RecordValidator extends Validator {
 			break;
 		case "SOA":
 			$parts = explode(" ", $content);
-			if (count($parts) !== 7) {
+			if ((count($parts) !== 7) && (count($parts) !== 3)) {
 				return array(
-					"message" => $prefix . "A SOA record must provide all 7 parts: <primary> <hostmaster> <serial> <refresh> <retry> <expire> <default_ttl>",
+					"message" => $prefix . "A SOA record must provide all 7 parts: <primary> <hostmaster> <serial> <refresh> <retry> <expire> <default_ttl>\n" .
+					"required: <primary> <hostmaster> <serial>\n" .
+					"optional: <refresh> <retry> <expire> <default_ttl>, pdns has default values are 10800 3600 604800 3600",
 					"code" => "RECORD_RHS_SOA_PARTS_MISSING"
 				);
 			}
