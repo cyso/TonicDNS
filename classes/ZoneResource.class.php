@@ -92,7 +92,7 @@ class ZoneResource extends TokenResource {
 		$data = $request->parseData();
 
 		if (empty($identifier)) {
-			if ($data === null) {
+			if ($data == null) {
 				return ZoneFunctions::get_all_zones($response);
 			} else {
 				$validator = new ZoneValidator($data);
