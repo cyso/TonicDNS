@@ -744,18 +744,21 @@ class ArpaValidator extends Validator {
 		"identifier" => array(
 			"valid_identifier" => array(
 				"rule" => array("check_valid_identifier"),
+				"code" => "ARPA_INVALID_IDENTIFIER",
 				"message" => "Identifier is not valid. Must be a single IPv4 or IPv6 address."
 			)
 		),
 		"reverse_dns" => array(
 			"valid_reverse_dns" => array(
 				"rule" => VALID_DOMAIN,
+				"code" => "RECORD_RHS_INVALID_FQDN",
 				"message" => "Reverse DNS is not valid. Must be a valid FQDN."
 			)
 		),
 		"query" => array(
 			"valid_query" => array(
 				"rule" => VALID_RANGE_QUERY,
+				"code" => "ARPA_INVALID_QUERY",
 				"message" => "Query is invalid. May only contain alphanumeric characters, dashes (-), dots (.) and wildcards (*). Multiple queries must be seperated by comma's."
 			)
 		),
