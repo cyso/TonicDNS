@@ -471,7 +471,7 @@ class ZoneFunctions {
 
 		if (!empty($parameters)) {
 			$query .= implode(", ", $q);
-			$query .= "WHERE name = :identifier";
+			$query .= " WHERE name = :identifier";
 			$parameters[":identifier"] = $identifier;
 
 			$statement = $connection->prepare(sprintf($query, PowerDNSConfig::DB_ZONE_TABLE));
