@@ -86,7 +86,7 @@ class ZoneFunctions {
 		return ZoneFunctions::get_all_zones($response, $out, $query);
 	}
 
-	public function get_zone($response, $identifier, &$out = null, $details = true, $arpa_expand = true) {
+	public function get_zone($response, $identifier, &$out = null, $details = true, $arpa_expand = true, $include_zone_id = false) {
 		$arpa = null;
 		if (preg_match(VALID_IPV4, $identifier) === 1) {
 			$arpa = HelperFunctions::ipv4_to_arpa($identifier);
@@ -142,6 +142,9 @@ class ZoneFunctions {
 		$first = true;
 		while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
 			if ($first) {
+				if ($include_zone_id) {
+					$output['z_id'] = $row['z_id'];
+				}
 				$output['name'] = $row['z_name'];
 				$output['type'] = $row['z_type'];
 				if (!empty($row['z_master'])) { $output['master'] = $row['z_master']; }
@@ -598,7 +601,7 @@ class ZoneFunctions {
 			return $response;
 		}
 
-		ZoneFunctions::get_zone($response, $identifier, $o, false);
+		ZoneFunctions::get_zone($response, $identifier, $o, false, true, true);
 
 		if (empty($o)) {
 			$out = false;
@@ -609,6 +612,16 @@ class ZoneFunctions {
 			$response->code = Response::CONFLICT;
 			$response->error = sprintf("Cannot delete records from SLAVE zone %s", $identifier);
 			$response->error_detail = "ZONE_IS_SLAVE";
+			$out = false;
+			return $response;
+		}
+
+		$zone_id = $o['z_id'];
+
+		if (empty($zone_id) || !ctype_digit($zone_id)) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not retrieve Zone ID to delete records from" . var_export($o, true);
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			$out = false;
 			return $response;
 		}
@@ -632,21 +645,25 @@ class ZoneFunctions {
 		}
 
 		$statement = $connection->prepare(sprintf(
-			"DELETE FROM `%s` WHERE name = :name AND type = :type AND prio = :priority AND content = :content;", PowerDNSConfig::DB_RECORD_TABLE
+			"DELETE FROM `%s` WHERE domain_id = :did AND name = :name AND type = :type AND prio = :priority AND content = :content;", PowerDNSConfig::DB_RECORD_TABLE
 		));
 
+		$statement->bindParam(":did", $r_did);
 		$statement->bindParam(":name", $r_name);
 		$statement->bindParam(":type", $r_type);
 		$statement->bindParam(":content", $r_content);
 		$statement->bindParam(":priority", $r_prio);
 
 		$statement_noprio = $connection->prepare(sprintf(
-			"DELETE FROM `%s` WHERE name = :name AND type = :type AND content = :content;", PowerDNSConfig::DB_RECORD_TABLE
+			"DELETE FROM `%s` WHERE domain_id = :did AND name = :name AND type = :type AND content = :content;", PowerDNSConfig::DB_RECORD_TABLE
 		));
 
+		$statement_noprio->bindParam(":did", $r_did);
 		$statement_noprio->bindParam(":name", $r_name);
 		$statement_noprio->bindParam(":type", $r_type);
 		$statement_noprio->bindParam(":content", $r_content);
+
+		$r_did = $zone_id;
 
 		foreach ($data->records as $record) {
 			$stmt = $statement_noprio;
