@@ -33,6 +33,16 @@ class FormattedResponse extends Response {
 	public $error = null;
 
 	/**
+	 * If set along with error, will replace the normal body with:
+	 * {
+	 *  "error": <string>,
+	 *  "detail": <array>
+	 * }
+	 * @var array
+	 */
+	public $error_detail = null;
+
+	/**
 	 * Log message that will replace the "Action complete" success message on logging.
 	 * @var string
 	 */
@@ -75,10 +85,13 @@ class FormattedResponse extends Response {
 			}
 		}
 
-		if ($this->error != null) {
+		if ($this->error != null && $this->error_detail != null && is_array($this->error_detail)) {
+			$this->body = array("error" => $this->error, "detail" => $this->error_detail);
+		} else if ($this->error != null && $this->error_detail != null && is_string($this->error_detail)) {
+			$this->body = array("error" => $this->error, "detail" => array("code" => $this->error_detail));
+		} else if ($this->error != null) {
 			$this->body = array("error" => $this->error);
 		}
-
 
 		switch ($type) {
 		case "json":
@@ -175,7 +188,7 @@ class XMLNode {
 			if (is_array($value) && is_bool($value['value'])) {
 				$value['value'] = ($value['value'])?"TRUE":"FALSE";
 			}
-			if (get_class($value['value']) == "XMLNode") {
+			if (is_object($value['value']) && get_class($value['value']) == "XMLNode") {
 				$gen = explode("\n", $value['value']->generate());
 
 				foreach ($gen as &$g) {

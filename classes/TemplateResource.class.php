@@ -16,6 +16,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @package resources
+ * @license http://www.gnu.org/licenses/gpl-3.0.html
  */
 /**
  * Template Resource.
@@ -27,8 +30,9 @@ class TemplateResource extends TokenResource {
 	/**
 	 * Retrieves an existing DNS template.
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * [
 	 *      {
 	 *            "identifier": <string>,
@@ -41,16 +45,17 @@ class TemplateResource extends TokenResource {
 	 *                  "priority": <int>
 	 *            },0..n ]
 	 *      },0..n
- 	 * ]
+	 * ]
+	 * ~~~
 	 *
-	 * Errors (request without identifier):
+	 * ### Errors (request without identifier): ###
 	 *
-	 *   500 - Failed to connect to database or query execution error.
+	 * * 500 - Failed to connect to database or query execution error.
 	 *
-	 * Errors (request with identifier):
+	 * ### Errors (request with identifier): ###
 	 *
-	 *   500 - Failed to connect to database or query execution error.
-	 *   404 - Could not find template.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 404 - Could not find template.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -70,6 +75,7 @@ class TemplateResource extends TokenResource {
 			if (!$validator->validates()) {
 				$response->code = Response::BADREQUEST;
 				$response->error = $validator->getFormattedErrors();
+				$response->error_detail = $validator->getErrorDetails();
 				return $response;
 			}
 
@@ -80,8 +86,9 @@ class TemplateResource extends TokenResource {
 	/**
 	 * Create a new DNS template.
 	 *
-	 * Request:
+	 * ### Request: ###
 	 *
+	 * ~~~
 	 * {
 	 *      "identifier": <string>,
 	 *      "description": <string>,
@@ -93,16 +100,19 @@ class TemplateResource extends TokenResource {
 	 *            "priority": <int>
 	 *      },0..n ]
 	 * }
+	 * ~~~
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors:
+	 * ### Errors: ###
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   409 - Template already exists.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 409 - Template already exists.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -115,20 +125,24 @@ class TemplateResource extends TokenResource {
 		if ($data == null) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure the body is in valid format.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
 		if (!isset($data->identifier) || !isset($data->description) || !isset($data->entries) || empty($data->entries)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier, description and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
 		$validator = new TemplateValidator($data);
+		$validator->mode_override = "add";
 
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -138,8 +152,9 @@ class TemplateResource extends TokenResource {
 	/**
 	 * Update an existing DNS template. This method will overwrite the entire Template.
 	 *
-	 * Request:
+	 * ### Request: ###
 	 *
+	 * ~~~
 	 * {
 	 *     "identifier": <string>,
 	 *     "description": <string>,
@@ -151,16 +166,19 @@ class TemplateResource extends TokenResource {
 	 *            "priority": <int optional>
 	 *     },0..n ]
 	 * }
+	 * ~~~
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors:
+	 * ### Errors: ###
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   404 - Could not find template.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 404 - Could not find template.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -174,12 +192,14 @@ class TemplateResource extends TokenResource {
 		if ($data == null) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure the body is in valid format.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
 		if (empty($identifier) || !isset($data->identifier) || !isset($data->entries) || empty($data->entries)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
@@ -188,6 +208,7 @@ class TemplateResource extends TokenResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -197,13 +218,17 @@ class TemplateResource extends TokenResource {
 	/**
 	 * Delete an existing DNS template.
 	 *
-	 * Response: true
+	 * ### Response: ### 
 	 *
-	 * Errors:
+	 * ~~~
+	 * true
+	 * ~~~
 	 *
-	 *   508 - Invalid request, missing required parameters or input validation failed.
-	 *   500 - Failed to connect to database or query execution error.
-	 *   404 - Could not find template.
+	 * ### Errors: ###
+	 *
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 500 - Failed to connect to database or query execution error.
+	 * * 404 - Could not find template.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -217,6 +242,7 @@ class TemplateResource extends TokenResource {
 		if (empty($identifier)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Identifier and/or entries were missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
@@ -226,10 +252,65 @@ class TemplateResource extends TokenResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
 		return TemplateFunctions::delete_template($response, $identifier);
+	}
+
+	/**
+	 * Validates the properties of a template.
+	 *
+	 * To validator Template records, use the RecordResource.
+	 *
+	 * ### Request: ###
+	 *
+	 * ~~~
+	 * {
+	 *     "identifier": <string>,
+	 *     "description": <string>
+	 * }
+	 * ~~~
+	 *
+	 * ### Response: ###
+	 *
+	 * ~~~
+	 * true
+	 * ~~~
+	 *
+	 * ### Errors: ###
+	 *
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
+	 *
+	 * @access public
+	 * @param mixed $request Request parameters
+	 * @return Response True if record is valid, error message with parse errors otherwise.
+	 */
+	public function validate($request) {
+		$response = new FormattedResponse($request);
+		$data = $request->parseData();
+
+		if (empty($data) || !isset($data->identifier) || !isset($data->description)) {
+			$response->code = Response::BADREQUEST;
+			$response->error = "Request body was malformed. Ensure that all mandatory properties have been set.";
+			$response->error_detail = "BODY_MALFORMED";
+			return $response;
+		}
+
+		$validator = new TemplateValidator($data);
+
+		if ($validator->validates()) {
+			$response->code = Response::OK;
+			$response->body = true;
+			$response->log_message = "Template was successfully validated.";
+		} else {
+			$response->code = Response::BADREQUEST;
+			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
+		}
+
+		return $response;
 	}
 }
 

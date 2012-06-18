@@ -27,6 +27,7 @@ class ZoneFunctions {
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			return $response;
 		}
 
@@ -40,6 +41,7 @@ class ZoneFunctions {
 			if ($result === false) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = "Could not query PowerDNS server.";
+				$response->error_detail = "INTERNAL_SERVER_ERROR";
 				return $response;
 			}
 		} else {
@@ -56,6 +58,7 @@ class ZoneFunctions {
 			if ($result->execute(array(":query" => $query)) === false) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = "Could not query PowerDNS server.";
+				$response->error_detail = "INTERNAL_SERVER_ERROR";
 				return $response;
 			}
 		}
@@ -83,16 +86,16 @@ class ZoneFunctions {
 		return ZoneFunctions::get_all_zones($response, $out, $query);
 	}
 
-	public function get_zone($response, $identifier, &$out = null, $details = true, $arpa_expand = true) {
+	public function get_zone($response, $identifier, &$out = null, $details = true, $arpa_expand = true, $include_zone_id = false) {
 		$arpa = null;
 		if (preg_match(VALID_IPV4, $identifier) === 1) {
-			$arpa = ZoneFunctions::ipv4_to_arpa($identifier);
+			$arpa = HelperFunctions::ipv4_to_arpa($identifier);
 		} else if (preg_match(VALID_IPV6, $identifier) === 1) {
-			$arpa = ZoneFunctions::ipv6_to_arpa($identifier);
+			$arpa = HelperFunctions::ipv6_to_arpa($identifier);
 		}
 
 		if ($arpa !== null && $arpa_expand === true) {
-			for ($i = 0; ($ret = ZoneFunctions::truncate_arpa($arpa, $i)) !== false; $i++) {
+			for ($i = 0; ($ret = HelperFunctions::truncate_arpa($arpa, $i)) !== false; $i++) {
 				$response = ZoneFunctions::get_zone($response, $ret, $out, $details, false);
 
 				if ($response->code !== Response::NOTFOUND) {
@@ -102,6 +105,7 @@ class ZoneFunctions {
 
 			$response->code = Response::NOTFOUND;
 			$response->error = sprintf("Could not find a reverse DNS zone for %s", $identifier);
+			$response->error_detail = "ARPA_ZONE_NOT_FOUND";
 			return $response;
 		}
 
@@ -110,6 +114,7 @@ class ZoneFunctions {
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			return $response;
 		}
 
@@ -126,15 +131,10 @@ class ZoneFunctions {
 			 r_content ASC;", PowerDNSConfig::DB_ZONE_TABLE, PowerDNSConfig::DB_RECORD_TABLE)
 		);
 
-		if ($statement === false) {
+		if ($statement === false || $statement->execute(array(":name" => $identifier)) === false) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not query PowerDNS server.";
-			return $response;
-		}
-
-		if ($statement->execute(array(":name" => $identifier)) === false) {
-			$response->code = Response::INTERNALSERVERERROR;
-			$response->error = "Could not query PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			return $response;
 		}
 
@@ -142,6 +142,9 @@ class ZoneFunctions {
 		$first = true;
 		while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
 			if ($first) {
+				if ($include_zone_id) {
+					$output['z_id'] = $row['z_id'];
+				}
 				$output['name'] = $row['z_name'];
 				$output['type'] = $row['z_type'];
 				if (!empty($row['z_master'])) { $output['master'] = $row['z_master']; }
@@ -194,6 +197,7 @@ class ZoneFunctions {
 		if (!empty($o)) {
 			$response->code = Response::CONFLICT;
 			$response->error = "Resource already exists";
+			$response->error_detail = "ZONE_ALREADY_EXISTS";
 			$out = false;
 			return $response;
 		}
@@ -232,6 +236,7 @@ class ZoneFunctions {
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			return $response;
 		}
 
@@ -252,6 +257,7 @@ class ZoneFunctions {
 		if ($zone->execute() === false) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Rolling back transaction, failed to insert zone.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 
 			$connection->rollback();
 			$out = false;
@@ -283,12 +289,18 @@ class ZoneFunctions {
 	}
 
 	public function create_records($response, $identifier, $data, &$out = null, $skip_domain_check = false, $connection = null) {
+		if (!is_object($data) || !isset($data->records)) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Creation data invalid";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
+			$out = false;
+			return $response;
+		}
+
 		if ($skip_domain_check === false) {
 			ZoneFunctions::get_zone($response, $identifier, $o, false);
 
 			if (empty($o)) {
-				$response->code = Response::NOTFOUND;
-				$response->error = "Zone does not exist";
 				$out = false;
 				return $response;
 			}
@@ -303,6 +315,7 @@ class ZoneFunctions {
 			} catch (PDOException $e) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = "Could not connect to PowerDNS server.";
+				$response->error_detail = "INTERNAL_SERVER_ERROR";
 				return $response;
 			}
 
@@ -312,20 +325,21 @@ class ZoneFunctions {
 
 		$orig_identifier = $identifier;
 		if (!ctype_digit($identifier)) {
-			$zone_id = $connection->prepare(sprintf(
-				"SELECT id FROM `%s` WHERE name = :name LIMIT 1;", PowerDNSConfig::DB_ZONE_TABLE
+			$zone = $connection->prepare(sprintf(
+				"SELECT id, type FROM `%s` WHERE name = :name LIMIT 1;", PowerDNSConfig::DB_ZONE_TABLE
 			));
 
 			$error = false;
-			if ($zone_id->execute(array(":name" => $identifier)) === false) {
+			if ($zone->execute(array(":name" => $identifier)) === false) {
 				$error = true;
-			} else if (($identifier = $zone_id->fetchColumn()) === false) {
+			} else if (($z = $zone->fetch(PDO::FETCH_ASSOC)) === false) {
 				$error = true;
 			}
 
 			if ($error) {
 				$response->code = Response::NOTFOUND;
 				$response->error = "Could not find zone to insert record into.";
+				$response->error_detail = "ZONE_NOT_FOUND";
 				$out = false;
 
 				if ($commit) {
@@ -334,6 +348,21 @@ class ZoneFunctions {
 
 				return $response;
 			}
+
+			if ($z['type'] == "SLAVE") {
+				$response->code = Response::CONFLICT;
+				$response->error = sprintf("Cannot insert records in to SLAVE zone %s", $identifier);
+				$response->error_detail = "ZONE_IS_SLAVE";
+				$out = false;
+
+				if ($commit) {
+					$connection->rollback();
+				}
+
+				return $response;
+			}
+
+			$identifier = $z['id'];
 		}
 
 		$statement = $connection->prepare(sprintf(
@@ -361,15 +390,20 @@ class ZoneFunctions {
 			} else {
 				$r_ttl = PowerDNSConfig::DNS_DEFAULT_RECORD_TTL;
 			}
-			if (isset($record->priority)) {
-				$r_prio = $record->priority;
+			if (($record->type == "MX") || ($record->type == "SRV")) {
+				if (isset($record->priority)) {
+					$r_prio = $record->priority;
+				} else {
+					$r_prio = PowerDNSConfig::DNS_DEFAULT_RECORD_PRIORITY;
+				}
 			} else {
-				$r_prio = PowerDNSConfig::DNS_DEFAULT_RECORD_PRIORITY;
+				$r_prio = null;
 			}
 
 			if ($statement->execute() === false) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = sprintf("Rolling back transaction, failed to insert zone record - name: '%s', type: '%s', content: '%s', ttl: '%s', prio: '%s'", $r_name, $r_type, $r_content, $r_ttl, $r_prio);
+				$response->error_detail = "RECORD_INSERT_FAILED";
 
 				$out = false;
 
@@ -389,7 +423,6 @@ class ZoneFunctions {
 		$response->log_message = sprintf("Zone %s added %d records.", $orig_identifier, count($data->records));
 
 		$out = true;
-
 		return $response;
 	}
 
@@ -397,8 +430,6 @@ class ZoneFunctions {
 		ZoneFunctions::get_zone($response, $identifier, $o, false);
 
 		if (empty($o)) {
-			$response->code = Response::NOTFOUND;
-			$response->error = "Resource does not exist";
 			$out = false;
 			return $response;
 		}
@@ -407,9 +438,11 @@ class ZoneFunctions {
 
 		try {
 			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			$connection->beginTransaction();
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			$out = false;
 			return $response;
 		}
@@ -431,36 +464,82 @@ class ZoneFunctions {
 			$parameters[":type"] = $data->type;
 		}
 
-		if (empty($parameters)) {
+		if (empty($parameters) && !isset($data->records)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Nothing to change, check your request body.";
+			$response->error_detail = "ZONE_NO_CHANGES";
 			$out = false;
 			return $response;
 		}
 
-		$query .= implode(", ", $q);
-		$query .= "WHERE name = :identifier";
-		$parameters[":identifier"] = $identifier;
+		if (!empty($parameters)) {
+			$query .= implode(", ", $q);
+			$query .= " WHERE name = :identifier";
+			$parameters[":identifier"] = $identifier;
 
-		$connection->beginTransaction();
+			$statement = $connection->prepare(sprintf($query, PowerDNSConfig::DB_ZONE_TABLE));
 
-		$statement = $connection->prepare(sprintf($query, PowerDNSConfig::DB_ZONE_TABLE));
+			if ($statement->execute($parameters) === false) {
+				$response->code = Response::INTERNALSERVERERROR;
+				$response->error = "Rolling back transaction, failed to modify zone.";
+				$response->error_detail = "ZONE_MODIFY_FAILED";
 
-		if ($statement->execute($parameters) === false) {
-			$response->code = Response::INTERNALSERVERERROR;
-			$response->error = "Rolling back transaction, failed to modify zone.";
+				$connection->rollback();
+				$out = false;
 
-			$connection->rollback();
-			$out = false;
+				return $response;
+			}
+		}
 
-			return $response;
+		if (isset($data->records)) {
+			$deletions = array();
+			$additions = array();
+			foreach ($data->records as $record) {
+				if (isset($record->mode) && $record->mode == "delete") {
+					$deletions[] = $record;
+				} else {
+					$additions[] = $record;
+				}
+			}
+
+			if (!empty($deletions)) {
+				$obj = new StdClass();
+				$obj->records = $deletions;
+				ZoneFunctions::delete_records($response, $identifier, $obj, $out, $connection);
+
+				if (!$out) {
+					$connection->rollback();
+					$out = false;
+					return $response;
+				}
+
+				unset($obj);
+			}
+
+			if (!empty($additions)) {
+				$obj = new StdClass();
+				$obj->records = $additions;
+				ZoneFunctions::create_records($response, $identifier, $obj, $out, true, $connection);
+
+				if (!$out) {
+					$connection->rollback();
+					$out = false;
+					return $response;
+				}
+
+				unset($obj);
+			}
 		}
 
 		$connection->commit();
 
 		$response->code = Response::OK;
 		$response->body = true;
-		$response->log_message = sprintf("Zone %s was modified.", $identifier);
+		if (isset($data->records)) {
+			$response->log_message = sprintf("Zone %s was modified, deleted %d records and added %d records.", $identifier, count($deletions), count($additions));
+		} else {
+			$response->log_message = sprintf("Zone %s was modified.", $identifier);
+		}
 		$out = true;
 
 		return $response;
@@ -470,8 +549,6 @@ class ZoneFunctions {
 		ZoneFunctions::get_zone($response, $identifier, $o, false);
 
 		if (empty($o)) {
-			$response->code = Response::NOTFOUND;
-			$response->error = "Resource does not exist";
 			$out = false;
 			return $response;
 		}
@@ -483,6 +560,7 @@ class ZoneFunctions {
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			$out = false;
 			return $response;
 		}
@@ -496,6 +574,7 @@ class ZoneFunctions {
 		if ($statement->execute(array(":name" => $identifier)) === false) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not query PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 
 			$connection->rollback();
 			$out = false;
@@ -513,41 +592,91 @@ class ZoneFunctions {
 		return $response;
 	}
 
-	public function delete_records($response, $identifier, $data, &$out = null) {
-		ZoneFunctions::get_zone($response, $identifier, $o, false);
+	public function delete_records($response, $identifier, $data, &$out = null, $connection = null) {
+		if (!is_object($data) || !isset($data->records)) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Deletion data invalid";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
+			$out = false;
+			return $response;
+		}
+
+		ZoneFunctions::get_zone($response, $identifier, $o, false, true, true);
 
 		if (empty($o)) {
-			$response->code = Response::NOTFOUND;
-			$response->error = "Resource does not exist";
+			$out = false;
+			return $response;
+		}
+
+		if ($o['type'] == "SLAVE") {
+			$response->code = Response::CONFLICT;
+			$response->error = sprintf("Cannot delete records from SLAVE zone %s", $identifier);
+			$response->error_detail = "ZONE_IS_SLAVE";
+			$out = false;
+			return $response;
+		}
+
+		$zone_id = $o['z_id'];
+
+		if (empty($zone_id) || !ctype_digit($zone_id)) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not retrieve Zone ID to delete records from" . var_export($o, true);
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			$out = false;
 			return $response;
 		}
 
 		unset($o);
 
-		try {
-			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
-		} catch (PDOException $e) {
-			$response->code = Response::INTERNALSERVERERROR;
-			$response->error = "Could not connect to PowerDNS server.";
-			$out = false;
-			return $response;
+		$commit = false;
+		if ($connection === null) {
+			try {
+				$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			} catch (PDOException $e) {
+				$response->code = Response::INTERNALSERVERERROR;
+				$response->error = "Could not connect to PowerDNS server.";
+				$response->error_detail = "INTERNAL_SERVER_ERROR";
+				$out = false;
+				return $response;
+			}
+
+			$connection->beginTransaction();
+			$commit = true;
 		}
 
-		$connection->beginTransaction();
-
 		$statement = $connection->prepare(sprintf(
-			"DELETE FROM `%s` WHERE name = :name AND type = :type AND prio = :priority AND content = :content;", PowerDNSConfig::DB_RECORD_TABLE
+			"DELETE FROM `%s` WHERE domain_id = :did AND name = :name AND type = :type AND prio = :priority AND content = :content;", PowerDNSConfig::DB_RECORD_TABLE
 		));
 
+		$statement->bindParam(":did", $r_did);
 		$statement->bindParam(":name", $r_name);
 		$statement->bindParam(":type", $r_type);
 		$statement->bindParam(":content", $r_content);
 		$statement->bindParam(":priority", $r_prio);
 
+		$statement_noprio = $connection->prepare(sprintf(
+			"DELETE FROM `%s` WHERE domain_id = :did AND name = :name AND type = :type AND content = :content;", PowerDNSConfig::DB_RECORD_TABLE
+		));
+
+		$statement_noprio->bindParam(":did", $r_did);
+		$statement_noprio->bindParam(":name", $r_name);
+		$statement_noprio->bindParam(":type", $r_type);
+		$statement_noprio->bindParam(":content", $r_content);
+
+		$r_did = $zone_id;
+
 		foreach ($data->records as $record) {
-			if (!isset($record->name) || !isset($record->type) || !isset($record->priority) || !isset($record->content)) {
+			$stmt = $statement_noprio;
+			if (!isset($record->name) || !isset($record->type) || !isset($record->content)) {
 				continue;
+			}
+
+			if (($record->type == "MX") || ($record->type == "SRV")) {
+				if (!isset($record->priority)) {
+					continue;
+				} else {
+					$stmt = $statement;
+				}
 			}
 
 			$r_name = $record->name;
@@ -555,18 +684,23 @@ class ZoneFunctions {
 			$r_content = $record->content;
 			$r_prio = $record->priority;
 
-			if ($statement->execute() === false) {
+			if ($stmt->execute() === false) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = sprintf("Rolling back transaction, failed to delete zone record - name: '%s', type: '%s', prio: '%s'", $r_name, $r_type, $r_prio);
+				$response->error_detail = "RECORD_DELETE_FAILED";
 
-				$connection->rollback();
+				if ($commit == true) {
+					$connection->rollback();
+				}
 				$out = false;
 
 				return $response;
 			}
 		}
 
-		$connection->commit();
+		if ($commit == true) {
+			$connection->commit();
+		}
 
 		$response->code = Response::OK;
 		$response->body = true;
@@ -575,48 +709,5 @@ class ZoneFunctions {
 
 		return $response;
 	}
-
-	private function ipv6_expand($ip) {
-		if (strpos($ip, '::') !== false)
-			$ip = str_replace('::', str_repeat(':0', 8 - substr_count($ip, ':')).':', $ip);
-
-		if (strpos($ip, ':') === 0)
-			$ip = '0'.$ip;
-
-		return $ip;
-	}
-
-	private function ipv6_to_arpa($ip) {
-		$ip = ZoneFunctions::ipv6_expand($ip);
-
-		$p = explode(":", $ip);
-		$n = '';
-
-		foreach($p as $part)
-			$n .= str_pad($part, 4, "0", STR_PAD_LEFT);
-
-		$n = str_split(strrev($n));
-
-		return implode(".", $n) . ".ip6.arpa";
-	}
-
-	private function ipv4_to_arpa($ip) {
-		$p = explode(".", $ip);
-
-		return "{$p[3]}.{$p[2]}.{$p[1]}.{$p[0]}.in-addr.arpa";
-	}
-
-	private function truncate_arpa($in, $n=0) {
-		$parts = explode(".", $in);
-
-		if ($n >= count($parts)-2)
-			return false;
-
-		for($i = 0; $i < $n; $i++)
-			array_shift($parts);
-
-		return implode(".", $parts);
-	}
-
 }
 ?>
