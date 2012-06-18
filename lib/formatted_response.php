@@ -188,7 +188,7 @@ class XMLNode {
 			if (is_array($value) && is_bool($value['value'])) {
 				$value['value'] = ($value['value'])?"TRUE":"FALSE";
 			}
-			if (get_class($value['value']) == "XMLNode") {
+			if (is_object($value['value']) && get_class($value['value']) == "XMLNode") {
 				$gen = explode("\n", $value['value']->generate());
 
 				foreach ($gen as &$g) {

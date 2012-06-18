@@ -597,7 +597,7 @@ class Request {
         $type = null;
         if (isset($this->requestType)) {
             preg_match("/^([\w]+\/[\w]+)(?:;.*)?$/", $this->requestType, $r);
-            if (is_array($r)) {
+            if (is_array($r) && count($r) > 1) {
                 $this->requestType = $r[1];
             }
             switch($this->requestType) {
@@ -648,6 +648,9 @@ class Request {
 
     private function sanitizeXMLObject($object) {
         $object = unserialize(preg_replace("/(^|;)*O:[0-9]+:\"[^\"]+\":/i","\\1"."O:" . strlen('stdClass').":\"stdClass\":", serialize($object)));
+        if (!is_object($object)) {
+            return null;
+        }
         $copy = clone $object;
 
         foreach($object as $k => $child) {
