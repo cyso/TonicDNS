@@ -41,11 +41,17 @@ class TokenResource extends Resource {
 		$response->addHeader('X-Resource', get_class($this));
 
 		$logger = new Logger($request->uri, $request->method, "Anonymous");
-		$logger->setInput(json_encode($request->parseData()));
+		$data = $request->parseData();
+		if (!empty($data) && $data instanceof StdClass && isset($data->password)) {
+			$data->password = "***FILTERED***";
+		}
+
+		$logger->setInput(json_encode($data));
 
 		if (!isset($request->requestToken) || empty($request->requestToken)) {
 			$response->code = Response::UNAUTHORIZED;
 			$response->error = "Authorization required";
+			$response->error_detail = "UNAUTHORIZED";
 			$response->addHeader('X-Debug', "No token supplied");
 			$logger->writeLog($response->error, $response->code);
 
@@ -65,6 +71,7 @@ class TokenResource extends Resource {
 		} catch (Exception $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = $e->getMessage();
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			$logger->writeLog($response->error, $response->code);
 
 			return $response;
@@ -75,6 +82,7 @@ class TokenResource extends Resource {
 		if ($token == null) {
 			$response->code = Response::FORBIDDEN;
 			$response->error = "Authentication failed";
+			$response->error_detail = "AUTHENTICATION_FAILED";
 			$response->addHeader('X-Debug', "Token is null");
 			$logger->writeLog($response->error, $response->code);
 
@@ -86,6 +94,7 @@ class TokenResource extends Resource {
 		if ($backend->validateToken($token) === false) {
 			$response->code = Response::FORBIDDEN;
 			$response->error = "Authentication failed";
+			$response->error_detail = "AUTHENTICATION_FAILED";
 			$response->addHeader('X-Debug', "Token is invalid");
 			$logger->writeLog($response->error, $response->code);
 
@@ -106,6 +115,7 @@ class TokenResource extends Resource {
 			} catch (Exception $e) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = $e;
+				$response->error_detail = "INTERNAL_SERVER_ERROR";
 				$logger->writeLog($response->error, $response->code);
 				return $response;
 			}
@@ -117,6 +127,7 @@ class TokenResource extends Resource {
 				$request->method,
 				$request->uri
 			);
+			$response->error_detail = "METHOD_NOT_ALLOWED";
 			$logger->writeLog($response->error, $response->code);
 			return $response;
 		}

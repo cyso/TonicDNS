@@ -16,6 +16,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @package resources
+ * @license http://www.gnu.org/licenses/gpl-3.0.html
  */
 /**
  * Authentication Resource.
@@ -25,10 +28,14 @@
  * @uri /authentication/:token
  */
 class AuthenticationResource extends AnonymousResource {
+	/**
+	 * Token backend to use.
+	 */
 	private $backend = null;
 
 	/**
 	 * Resource constructor
+	 * @ignore
 	 * @param str[] parameters Parameters passed in from the URL as matched from the URI regex
 	 */
 	function  __construct($parameters) {
@@ -52,27 +59,31 @@ class AuthenticationResource extends AnonymousResource {
 	/**
 	 * Corresponds to login.
 	 *
-	 * Request:
+	 * ### Request: ###
 	 *
+	 * ~~~
 	 * {
 	 * 	"username": <username>,
 	 * 	"password": <password>,
 	 * 	"local_user": <username>
 	 * }
+	 * ~~~
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * {
 	 *      "username": <string>,
 	 *      "valid_until": <int>,
 	 *      "hash": <string>,
 	 *      "token": <string>
 	 * }
+	 * ~~~
 	 *
-	 * Errors:
+	 * ### Errors: ###
 	 *
-	 *   500 - Invalid request or missing username/password.
-	 *   403 - Username/password incorrect.
+	 * * 500 - Invalid request or missing username/password.
+	 * * 403 - Username/password incorrect.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -85,12 +96,14 @@ class AuthenticationResource extends AnonymousResource {
 		if ($data == null) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure the body is in valid format.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
 		if (!isset($data->username) || !isset($data->password)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Username and/or password was missing or invalid. Ensure that the body is in valid format and all required parameters are present.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
@@ -99,6 +112,7 @@ class AuthenticationResource extends AnonymousResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -111,6 +125,7 @@ class AuthenticationResource extends AnonymousResource {
 		if ($token == null) {
 			$response->code = Response::FORBIDDEN;
 			$response->error = "Username and/or password was invalid.";
+			$response->error_detail = "AUTH_INVALID_CREDENTIALS";
 			return $response;
 		}
 
@@ -122,17 +137,21 @@ class AuthenticationResource extends AnonymousResource {
 	}
 
 	/**
-	 * Corresponds to session validation. If the session is valid, the duration is refreshed. If it is 
+	 * Corresponds to session validation. 
+	 *
+	 * If the session is valid, the duration is refreshed. If it is 
 	 * not, but it does exist, it will be destroyed.
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors:
+	 * ### Errors: ###
 	 *
-	 *   500 - Missing or token with invalid format.
-	 *   403 - Invalid token.
+	 * * 500 - Missing or token with invalid format.
+	 * * 403 - Invalid token.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -146,6 +165,7 @@ class AuthenticationResource extends AnonymousResource {
 		if (empty($token)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Token was missing or invalid.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
@@ -155,6 +175,7 @@ class AuthenticationResource extends AnonymousResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -163,6 +184,7 @@ class AuthenticationResource extends AnonymousResource {
 		if ($t == null) {
 			$response->code = Response::FORBIDDEN;
 			$response->error = "Token was invalid.";
+			$response->error_detail = "AUTH_INVALID_TOKEN";
 			return $response;
 		}
 
@@ -176,15 +198,17 @@ class AuthenticationResource extends AnonymousResource {
 	/**
 	 * Corresponds to session logout.
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors:
+	 * ### Errors: ###
 	 *
-	 *   500 - Missing or token with invalid format.
-	 *   500 - Could not destroy token.
-	 *   403 - Invalid token.
+	 * * 500 - Missing or token with invalid format.
+	 * * 500 - Could not destroy token.
+	 * * 403 - Invalid token.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
@@ -198,6 +222,7 @@ class AuthenticationResource extends AnonymousResource {
 		if (!isset($token)) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Token was missing or invalid.";
+			$response->error_detail = "MISSING_REQUIRED_PARAMETERS";
 			return $response;
 		}
 
@@ -207,6 +232,7 @@ class AuthenticationResource extends AnonymousResource {
 		if (!$validator->validates()) {
 			$response->code = Response::BADREQUEST;
 			$response->error = $validator->getFormattedErrors();
+			$response->error_detail = $validator->getErrorDetails();
 			return $response;
 		}
 
@@ -214,13 +240,15 @@ class AuthenticationResource extends AnonymousResource {
 
 		if ($t == null) {
 			$response->code = Response::FORBIDDEN;
-			$response->body = array("error" => "Token was invalid.");
+			$response->error = "Token was invalid.";
+			$response->error_detail = "AUTH_INVALID_TOKEN";
 			return $response;
 		}
 
 		if (!$this->backend->destroyToken($t)) {
 			$response->code = Response::INTERNALSERVERERROR;
-			$response->body = array("error" => "Token could not be destroyed.");
+			$response->error = "Token could not be destroyed.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
 			return $response;
 		}
 

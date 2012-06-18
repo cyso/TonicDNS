@@ -16,6 +16,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @package resources
+ * @license http://www.gnu.org/licenses/gpl-3.0.html
  */
 /**
  * Record Resource.
@@ -25,50 +28,59 @@ class RecordResource extends TokenResource {
 	/**
 	 * Validates a set of records.
 	 *
-	 * Request:
+	 * ### Request: ###
 	 *
+	 * ~~~
 	 * {
-	 * 		entries: [ {
+	 *      entries: [ {
 	 *              "name": <string>,
 	 *              "type": <string>,
 	 *              "content": <string>,
 	 *              "ttl": <int optional>,
 	 *              "priority: <int optional>,
 	 *              "change_date": <int optional>
+	 *              "mode": add|delete              # default = add
 	 *      },0..n ],
-	 * 		records: [ {
+	 *      records: [ {
 	 *              "name": <string>,
 	 *              "type": <string>,
 	 *              "content": <string>,
 	 *              "ttl": <int optional>,
 	 *              "priority: <int optional>,
 	 *              "change_date": <int optional>
-	 *      },0..n ]
+	 *              "mode": add|delete              # default = add
+	 *      },0..n ],
 	 * }
+	 * ~~~
 	 *
-	 * Response:
+	 * ### Response: ###
 	 *
+	 * ~~~
 	 * true
+	 * ~~~
 	 *
-	 * Errors:
+	 * ### Errors: ###
 	 *
-	 * 508 - Invalid request, missing required parameters or input validation failed.
+	 * * 508 - Invalid request, missing required parameters or input validation failed.
 	 *
 	 * @access public
 	 * @param mixed $request Request parameters
 	 * @return Response True if record is valid, error message with parse errors otherwise.
 	 */
-	public function post($request) {
+	public function validate($request) {
 		$response = new FormattedResponse($request);
 		$data = $request->parseData();
 
 		if (empty($data) || (!isset($data->entries) && !isset($data->records))) {
 			$response->code = Response::BADREQUEST;
 			$response->error = "Request body was malformed. Ensure that all mandatory properties have been set.";
+			$response->error_detail = "BODY_MALFORMED";
 			return $response;
 		}
 
+		Validator::resetCounter();
 
+		$details = array();
 		if (isset($data->entries) && is_array($data->entries)) {
 			$output = array();
 			$i = 0;
@@ -79,13 +91,13 @@ class RecordResource extends TokenResource {
 					continue;
 				}
 
-				$validator = new RecordValidator();
-				$validator->initialize($d);
+				$validator = new RecordValidator($d);
 				$validator->record_type = "TEMPLATE";
 
 				if (!$validator->validates()) {
 					$output[] = sprintf("Validation errors in entry %d:", $i);
 					$output[] = $validator->getFormattedErrors(false);
+					$details[] = $validator->getErrorDetails();
 				}
 				continue;
 			}
@@ -101,12 +113,12 @@ class RecordResource extends TokenResource {
 					continue;
 				}
 
-				$validator = new RecordValidator();
-				$validator->initialize($d);
+				$validator = new RecordValidator($d);
 
 				if (!$validator->validates()) {
 					$output[] = sprintf("Validation errors in record %d:", $i);
 					$output[] = $validator->getFormattedErrors(false);
+					$details[] = $validator->getErrorDetails();
 				}
 				continue;
 			}
@@ -119,8 +131,22 @@ class RecordResource extends TokenResource {
 		} else {
 			$response->code = Response::BADREQUEST;
 			$response->error = implode("\n", $output);
+			$response->error_detail = $details;
 		}
 
 		return $response;
+	}
+
+	/**
+	 * This method provides legacy support, and is internally redirected to validate(). Older 
+	 * versions used the POST method instead of VALIDATE.
+	 *
+	 * @deprecated
+	 * @access public
+	 * @param mixed $request Request parameters
+	 * @return Response True if record is valid, error message with parse errors otherwise.
+	 */
+	public function post($request) {
+		return $this->validate($request);
 	}
 }

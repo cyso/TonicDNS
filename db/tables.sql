@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS `records` (
   `domain_id` int(11) DEFAULT NULL,
   `name` varchar(255) NOT NULL,
   `type` varchar(6) NOT NULL,
-  `content` varchar(255) NOT NULL,
-  `ttl` int(11) NOT NULL,
+  `content` varchar(4096) NOT NULL,
+  `ttl` int(11) DEFAULT NULL,
   `prio` int(11) DEFAULT NULL,
   `change_date` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -39,21 +39,21 @@ ALTER TABLE `records`
 -- These tables contain templates
 
 CREATE TABLE IF NOT EXISTS `zone_templ` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(128) NOT NULL,
   `descr` varchar(1024) NOT NULL,
-  `owner` bigint(20) NOT NULL,
+  `owner` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 ;
 
 CREATE TABLE IF NOT EXISTS `zone_templ_records` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `zone_templ_id` bigint(20) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `zone_templ_id` int(20) NOT NULL,
   `name` varchar(255) NOT NULL,
   `type` varchar(6) NOT NULL,
   `content` varchar(255) NOT NULL,
-  `ttl` bigint(20) NOT NULL,
-  `prio` bigint(20) NOT NULL,
+  `ttl` int(11) DEFAULT NULL,
+  `prio` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `zone_templ_id` (`zone_templ_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 ;
