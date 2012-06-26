@@ -759,7 +759,7 @@ class ArpaValidator extends Validator {
 			"valid_query" => array(
 				"rule" => VALID_RANGE_QUERY,
 				"code" => "ARPA_INVALID_QUERY",
-				"message" => "Query is invalid. May only contain alphanumeric characters, dashes (-), dots (.) and wildcards (*). Multiple queries must be seperated by comma's."
+				"message" => "Query is invalid. May only contain alphanumeric characters, dashes (-), dots (.) and wildcards (*). Multiple queries must be separated by comma's."
 			)
 		),
 	);

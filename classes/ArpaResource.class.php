@@ -30,7 +30,7 @@ class ArpaResource extends TokenResource {
 	 * Retrieves an existing reverse DNS record.
 	 *
 	 * If a query is specified in the URL, all records matching the IPs or ranges
-	 * are returned. Multiple queries may be specified, and must be comma seperated.
+	 * are returned. Multiple queries may be specified, and must be comma separated.
 	 *
 	 * If an identifier is specified, the reverse DNS record for one IP will be 
 	 * retrieved.
