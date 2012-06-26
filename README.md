@@ -8,7 +8,7 @@ This a RESTful API for PowerDNS licensed under GPL. It uses the MIT licensed Ton
 Features:
 
 * Token based communication.
-* Option to store tokens in the PowerDNS database, or in a seperate SQLite database.
+* Option to store tokens in the PowerDNS database, or in a separate SQLite database.
 * Should work with any PowerDNS backend database, tested with MySQL.
 * Supports adding of zones, records and zone and record templates.
 * Atomic commits, all modifications are validated on input and executed in a single transaction.
@@ -35,7 +35,7 @@ Clone the repo.
 $ git clone git://github.com/Cysource/TonicDNS.git
 ```
 
-Create a new VirtualHost in Apache. I recommend using mod_itk and using a seperate user account for running TonicDNS. I also recommend running the communication over SSL, as TonicDNS doesn't provide any encryption on its own (nor will it ever). The example below assumes you follow these recommendations. 
+Create a new VirtualHost in Apache. I recommend using mod_itk and using a separate user account for running TonicDNS. I also recommend running the communication over SSL, as TonicDNS doesn't provide any encryption on its own (nor will it ever). The example below assumes you follow these recommendations. 
 
 ```
 <VirtualHost *:80>
