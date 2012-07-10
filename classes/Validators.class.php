@@ -17,11 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with TonicDNS.  If not, see <http://www.gnu.org/licenses/>.
  */
-define("VALID_NOTEMPTY", "#^.+$#");
+define("VALID_NOTEMPTY", "#^(.+)$#");
 define("VALID_INT", "#^[0-9]+$#");
 define("VALID_NAME", "#^[\w_-]+$#");
 define("VALID_STRING", "#^[\w -+.]*$#");
-define("VALID_QUOTED", "#^[\"]{1}.*[\"]{1}$#");
+define("VALID_QUOTED", "#^[\"]{1}(.*)[\"]{1}$#");
+define("NAPTR_FLAGS_VALID", "#^[a-z0-9]*$#i");
+define("NAPTR_FLAGS_EXCLUSIVE", "#[sau]#i");
+define("NAPTR_SERVICE_VALID", "#^(?:[a-z][a-z0-9]{0,31})?(?:\+[a-z][a-z0-9]{0,31})*$#i");
+define("NAPTR_REGEX_VALID_DELIMITER", "#^[^i0-9\\\\]$#");
+define("NAPTR_REGEX_VALID_BACKREF", "#^\\\\[0-9]$#");
+define("NAPTR_REGEX_VALID_FLAG", "#^[i]?$#");
 define("VALID_TOKEN", "#^[0-9a-f]{40}$#");
 define("VALID_HEX_40", "#^[0-9a-f]{40}$#i");
 define("VALID_ZONE_TYPE", "#^MASTER$|^SLAVE$|^NATIVE$#");
@@ -517,14 +523,16 @@ class RecordValidator extends Validator {
 			$parts = explode(" ", $content);
 			if (count($parts) !== 6) {
 				return array(
-					"message" => $prefix . "A NAPTR record must provide all 6 parts (note the quotes and trailing dot): <order> <preference> '<flags>' '<service>' '<regex>' replacement.",
+					"message" => $prefix . "A NAPTR record must provide all 6 parts (note the quotes and trailing dot): <order> <preference> \"<flags>\" \"<service>\" \"<regexp>\" replacement.",
 					"code" => "RECORD_RHS_NAPTR_PARTS_MISSING"
 				);
 			}
+			$naptr_terminal = false;
+			$naptr_regex = false;
 			for ($i = 0; $i < count($parts); $i++) {
 				switch ($i) {
-				case 0:
-				case 1:
+				case 0: // Order
+				case 1: // Preference
 					if (!ctype_digit($parts[$i])) {
 						return array(
 							"message" => $prefix . sprintf("NAPTR record part %d must be a valid integer.", $i+1),
@@ -532,23 +540,129 @@ class RecordValidator extends Validator {
 						);
 					}
 					break;
-				case 2:
-				case 3:
-				case 4:
-					if (preg_match(VALID_QUOTED, $parts[$i]) === 0) {
+				case 2: // Flags
+					if (preg_match(VALID_QUOTED, $parts[$i], $p) === 0) {
 						return array(
 							"message" => $prefix . sprintf("NAPTR record part %d must be a valid quoted string.", $i+1),
 							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 						);
 					}
+					if (preg_match(NAPTR_FLAGS_VALID, $p[1]) === 0) {
+						return array(
+							"message" => $prefix . "NAPTR record part $i contains invalid characters. May only contain alphanumeric characters.",
+							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+						);
+					}
+					if (preg_match_all(NAPTR_FLAGS_EXCLUSIVE, $p[1], $q) > 1) {
+						return array(
+							"message" => $prefix . "NAPTR record part $i contains too many multiple exclusive FLAGS: S, A, U). Use only one at a time.",
+							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+						);
+					}
+					switch (strtolower($p[1])) {
+						case "s":
+						case "a":
+						case "u":
+							$naptr_terminal = true;
+						default:
+							$naptr_terminal = false;
+					}
+					unset($p);
+					unset($q);
 					break;
-				case 5:
-					if (preg_match(VALID_NOTEMPTY, $parts[$i]) === 0) {
+				case 3: // Service
+					if (preg_match(VALID_QUOTED, $parts[$i], $p) === 0) {
+						return array(
+							"message" => $prefix . "NAPTR record part $i must be a valid quoted string.",
+							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+						);
+					}
+					if ($naptr_terminal && empty($p)) {
+						return array(
+							"message" => $prefix . "NAPTR record part $i is invalid. A SERVICE must be specified if the FLAGS include a terminal flag.",
+							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+						);
+					}
+					if (preg_match(NAPTR_SERVICE_VALID, $p[1]) === 0) {
+						return array(
+							"message" => $prefix . "NAPTR record part $i is invalid.",
+							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+						);
+					}
+					unset($p);
+					break;
+				case 4: // Regexp
+					if (preg_match(VALID_QUOTED, $parts[$i], $p) === 0) {
+						return array(
+							"message" => $prefix . "NAPTR record part $i must be a valid quoted string.",
+							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+						);
+					}
+					if (!empty($p[1])) {
+						$naptr_regex = true;
+						$delimiter = substr($p[1], 0, 1);
+						if (preg_match(NAPTR_REGEX_VALID_DELIMITER, $delimiter) === 0) {
+							return array(
+								"message" => $prefix . "NAPTR record part $i contains an invalid POSIX replacement regexp. Delimiter may be any character except 'i', '\\' and may not be a digit. ",
+								"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+							);
+						}
+						$parts = explode($delimiter, $p[1]);
+						if (count($parts) !== 3) {
+							return array(
+								"message" => $prefix . "NAPTR record $i contains an invalid POSIX replacement regexp. Not all parts were specified.",
+								"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+							);
+						}
+						if (preg_match(NAPTR_REGEX_VALID_BACKREF, $parts[1]) === 0) {
+							return array(
+								"message" => $prefix . "NAPTR record part $i contains an invalid POSIX replacement regexp. May only contain one backref in the form of '\\1'.",
+								"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+							);
+						}
+						if (preg_match(NAPTR_REGEX_VALID_FLAG, $parts[2]) === 0) {
+							return array(
+								"message" => $prefix . "NAPTR record part $i contains an invalid POSIX regexp flag. May optionally contain 'i', or nothing at all.",
+								"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+							);
+						}
+						unset($delimiter);
+						unset($parts);
+					}
+					unset($p);
+					break;
+				case 5: // Replacement
+					if (preg_match(VALID_NOTEMPTY, $parts[$i], $p) === 0) {
 						return array(
 							"message" => $prefix . sprintf("NAPTR record part %d must be a valid record pointer, or a single dot (.).", $i+1),
 							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 						);
 					}
+					if (ValidatorConfig::BIND_COMPATABILITY === true) {
+						$replacement = $p[1];
+						if ($naptr_regex && $replacement != ".") {
+							return array(
+								"message" => $prefix . "NAPTR record part $i is invalid. REGEXP and REPLACEMENT should not be used at the same time.",
+								"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+							);
+						}
+					} else {
+						$replacement = HelperFunctions::str_replace_last(".", "", $p[1]);
+						if ($naptr_regex && $replacement != "") {
+							return array(
+								"message" => $prefix . "NAPTR record part $i is invalid. REGEXP and REPLACEMENT should not be used at the same time.",
+								"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+							);
+						}
+					}
+					if (!empty($replacement) && preg_match(VALID_DOMAIN, $replacement) === 0) {
+						return array(
+							"message" => $prefix . "NAPTR record part $i is invalid. REPLACEMENT must be either '.' or a valid FQDN.",
+							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
+						);
+					}
+					unset($replacement);
+					unset($p);
 					break;
 				}
 			}
