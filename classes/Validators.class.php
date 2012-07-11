@@ -24,7 +24,7 @@ define("VALID_STRING", "#^[\w -+.]*$#");
 define("VALID_QUOTED", "#^[\"]{1}(.*)[\"]{1}$#");
 define("NAPTR_FLAGS_VALID", "#^[a-z0-9]*$#i");
 define("NAPTR_FLAGS_EXCLUSIVE", "#[sau]#i");
-define("NAPTR_SERVICE_VALID", "#^(?:[a-z][a-z0-9]{0,31})?(?:\+[a-z][a-z0-9]{0,31})*$#i");
+define("NAPTR_SERVICE_VALID", "#^(?:[a-z][a-z0-9]{0,31})?$|^(?:[a-z][a-z0-9]{0,31})(?:\+[a-z][a-z0-9]{0,31})*$#i");
 define("NAPTR_REGEX_VALID_DELIMITER", "#^[^i0-9\\\\]$#");
 define("NAPTR_REGEX_VALID_BACKREF", "#^\\\\[0-9]$#");
 define("NAPTR_REGEX_VALID_FLAG", "#^[i]?$#");
@@ -33,8 +33,10 @@ define("VALID_HEX_40", "#^[0-9a-f]{40}$#i");
 define("VALID_ZONE_TYPE", "#^MASTER$|^SLAVE$|^NATIVE$#");
 if (ValidatorConfig::BIND_COMPATABILITY === true) {
 	define("VALID_DOMAIN", "#^(?:[A-Z0-9](?:[A-Z0-9\-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}[\.]?$#i");
+	define("VALID_EMPTY_DOMAIN", "#^\.$|^$#");
 } else {
 	define("VALID_DOMAIN", "#^(?:[A-Z0-9](?:[A-Z0-9\-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}$#i");
+	define("VALID_EMPTY_DOMAIN", "#^$#");
 }
 define("VALID_TEMPLATE_DOMAIN", "#^(?:(?:[A-Z0-9_](?:[A-Z0-9\-_]{0,61}[A-Z0-9])?\.)*(?:[A-Z]{2,6}|\[ZONE\])|(?:\[ZONE\]))$#i");
 define("VALID_QUERY", "#^[a-zA-Z0-9\-\.*]+$#");
@@ -549,13 +551,13 @@ class RecordValidator extends Validator {
 					}
 					if (preg_match(NAPTR_FLAGS_VALID, $p[1]) === 0) {
 						return array(
-							"message" => $prefix . "NAPTR record part $i contains invalid characters. May only contain alphanumeric characters.",
+							"message" => $prefix . sprintf("NAPTR record part %d contains invalid characters. May only contain alphanumeric characters.", $i+1),
 							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 						);
 					}
 					if (preg_match_all(NAPTR_FLAGS_EXCLUSIVE, $p[1], $q) > 1) {
 						return array(
-							"message" => $prefix . "NAPTR record part $i contains too many multiple exclusive FLAGS: S, A, U). Use only one at a time.",
+							"message" => $prefix . sprintf("NAPTR record part %d contains too many multiple exclusive FLAGS: S, A, U). Use only one at a time.", $i+1),
 							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 						);
 					}
@@ -564,8 +566,10 @@ class RecordValidator extends Validator {
 						case "a":
 						case "u":
 							$naptr_terminal = true;
+							break;
 						default:
 							$naptr_terminal = false;
+							break;
 					}
 					unset($p);
 					unset($q);
@@ -573,19 +577,19 @@ class RecordValidator extends Validator {
 				case 3: // Service
 					if (preg_match(VALID_QUOTED, $parts[$i], $p) === 0) {
 						return array(
-							"message" => $prefix . "NAPTR record part $i must be a valid quoted string.",
+							"message" => $prefix . sprintf("NAPTR record part %d must be a valid quoted string.", $i+1),
 							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 						);
 					}
-					if ($naptr_terminal && empty($p)) {
+					if ($naptr_terminal && empty($p[1])) {
 						return array(
-							"message" => $prefix . "NAPTR record part $i is invalid. A SERVICE must be specified if the FLAGS include a terminal flag.",
+							"message" => $prefix . sprintf("NAPTR record part %d is invalid. A SERVICE must be specified if the FLAGS include a terminal flag.", $i+1),
 							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 						);
 					}
 					if (preg_match(NAPTR_SERVICE_VALID, $p[1]) === 0) {
 						return array(
-							"message" => $prefix . "NAPTR record part $i is invalid.",
+							"message" => $prefix . sprintf("NAPTR record part %d is invalid.", $i+1),
 							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 						);
 					}
@@ -594,40 +598,41 @@ class RecordValidator extends Validator {
 				case 4: // Regexp
 					if (preg_match(VALID_QUOTED, $parts[$i], $p) === 0) {
 						return array(
-							"message" => $prefix . "NAPTR record part $i must be a valid quoted string.",
+							"message" => $prefix . sprintf("NAPTR record part %d must be a valid quoted string.", $i+1),
 							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 						);
 					}
 					if (!empty($p[1])) {
 						$naptr_regex = true;
 						$delimiter = substr($p[1], 0, 1);
+						$reg = substr($p[1], 1);
 						if (preg_match(NAPTR_REGEX_VALID_DELIMITER, $delimiter) === 0) {
 							return array(
-								"message" => $prefix . "NAPTR record part $i contains an invalid POSIX replacement regexp. Delimiter may be any character except 'i', '\\' and may not be a digit. ",
+								"message" => $prefix . sprintf("NAPTR record part %d contains an invalid POSIX replacement regexp. Delimiter may be any character except 'i', '\\' and may not be a digit. ", $i+1),
 								"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 							);
 						}
-						$parts = explode($delimiter, $p[1]);
-						if (count($parts) !== 3) {
+						$partz = explode($delimiter, $reg);
+						if (count($partz) !== 3) {
 							return array(
-								"message" => $prefix . "NAPTR record $i contains an invalid POSIX replacement regexp. Not all parts were specified.",
+								"message" => $prefix . sprintf("NAPTR record %d contains an invalid POSIX replacement regexp. Not all parts were specified.", $i+1),
 								"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 							);
 						}
-						if (preg_match(NAPTR_REGEX_VALID_BACKREF, $parts[1]) === 0) {
+						if (preg_match(NAPTR_REGEX_VALID_BACKREF, $partz[1]) === 0) {
 							return array(
-								"message" => $prefix . "NAPTR record part $i contains an invalid POSIX replacement regexp. May only contain one backref in the form of '\\1'.",
+								"message" => $prefix . sprintf("NAPTR record part %d contains an invalid POSIX replacement regexp. May only contain one backref in the form of '\\1'.", $i+1),
 								"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 							);
 						}
-						if (preg_match(NAPTR_REGEX_VALID_FLAG, $parts[2]) === 0) {
+						if (preg_match(NAPTR_REGEX_VALID_FLAG, $partz[2]) === 0) {
 							return array(
-								"message" => $prefix . "NAPTR record part $i contains an invalid POSIX regexp flag. May optionally contain 'i', or nothing at all.",
+								"message" => $prefix . sprintf("NAPTR record part %d contains an invalid POSIX regexp flag. May optionally contain 'i', or nothing at all.", $i+1),
 								"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 							);
 						}
 						unset($delimiter);
-						unset($parts);
+						unset($partz);
 					}
 					unset($p);
 					break;
@@ -642,7 +647,7 @@ class RecordValidator extends Validator {
 						$replacement = $p[1];
 						if ($naptr_regex && $replacement != ".") {
 							return array(
-								"message" => $prefix . "NAPTR record part $i is invalid. REGEXP and REPLACEMENT should not be used at the same time.",
+								"message" => $prefix . sprintf("NAPTR record part %d is invalid. REGEXP and REPLACEMENT should not be used at the same time.", $i+1),
 								"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 							);
 						}
@@ -650,14 +655,14 @@ class RecordValidator extends Validator {
 						$replacement = HelperFunctions::str_replace_last(".", "", $p[1]);
 						if ($naptr_regex && $replacement != "") {
 							return array(
-								"message" => $prefix . "NAPTR record part $i is invalid. REGEXP and REPLACEMENT should not be used at the same time.",
+								"message" => $prefix . sprintf("NAPTR record part %d is invalid. REGEXP and REPLACEMENT should not be used at the same time.", $i+1),
 								"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 							);
 						}
 					}
-					if (!empty($replacement) && preg_match(VALID_DOMAIN, $replacement) === 0) {
+					if (!empty($replacement) && preg_match(VALID_DOMAIN, $replacement) === 0 && preg_match(VALID_EMPTY_DOMAIN, $replacement) === 0) {
 						return array(
-							"message" => $prefix . "NAPTR record part $i is invalid. REPLACEMENT must be either '.' or a valid FQDN.",
+							"message" => $prefix . sprintf("NAPTR record part %d is invalid. REPLACEMENT must be either '.' or a valid FQDN.", $i+1),
 							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 						);
 					}

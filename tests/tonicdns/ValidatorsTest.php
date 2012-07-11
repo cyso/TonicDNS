@@ -374,8 +374,10 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 			'10 20 "s" "SIP+I2C" "!A!" .',
 			'10 20 "s" "SIP+I2C" "!A!A!z" .',
 			'10 20 "s" "SIP+I2C" "!A!\\1!z" .',
+			'10 20 "s" "SIP+I2C" "!A!\\1!i" example.com.',
 			'10 20 "s" "SIP+I2C" "!A!\\1!z" example.com.',
 			'10 20 "s" "SIP+I2C" "" ',
+			'10 20 "s" "SIP+I2C" "" x',
 		);
 
 		$right = array(
