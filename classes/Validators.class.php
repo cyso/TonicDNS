@@ -387,28 +387,30 @@ class RecordValidator extends Validator {
 			return false;
 		}
 		if ($this->record_mode == "ADD") {
-			if ($this->type != 'CNAME' && in_array($this->name, RecordValidator::$cnames)) {
-				return array(
-					"message" => sprintf("Cannot add a new record of type %s when a CNAME record is being inserted for %s", $this->type, $this->name),
-					"code" => "RECORD_CNAME_ALREADY_INSERT"
-				);
-			} else if ($this->type == 'CNAME' && in_array($this->name, RecordValidator::$others)) {
-				return array(
-					"message" => sprintf("Cannot add a new CNAME record when a record of another type is being inserted for %s", $this->name),
-					"code" => "RECORD_CNAME_OTHER_INSERT"
-				);
-			}
+			if (!defined("TESTING_MODE")) {
+				if ($this->type != 'CNAME' && in_array($this->name, RecordValidator::$cnames)) {
+					return array(
+						"message" => sprintf("Cannot add a new record of type %s when a CNAME record is being inserted for %s", $this->type, $this->name),
+						"code" => "RECORD_CNAME_ALREADY_INSERT"
+					);
+				} else if ($this->type == 'CNAME' && in_array($this->name, RecordValidator::$others)) {
+					return array(
+						"message" => sprintf("Cannot add a new CNAME record when a record of another type is being inserted for %s", $this->name),
+						"code" => "RECORD_CNAME_OTHER_INSERT"
+					);
+				}
 
-			if ($this->type != 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("CNAME"), RecordValidator::$deletions) != false) {
-				return array(
-					"message" => sprintf("Cannot add a new record of type %s when a CNAME record is already present for %s", $this->type, $this->name),
-					"code" => "RECORD_CNAME_ALREADY_PRESENT"
-				);
-			} else if ($this->type == 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("!CNAME"), RecordValidator::$deletions) != false) {
-				return array(
-					"message" => sprintf("Cannot add a new CNAME record when a record of another type is already present for %s", $this->name),
-					"code" => "RECORD_CNAME_OTHER_PRESENT"
-				);
+				if ($this->type != 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("CNAME"), RecordValidator::$deletions) != false) {
+					return array(
+						"message" => sprintf("Cannot add a new record of type %s when a CNAME record is already present for %s", $this->type, $this->name),
+						"code" => "RECORD_CNAME_ALREADY_PRESENT"
+					);
+				} else if ($this->type == 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("!CNAME"), RecordValidator::$deletions) != false) {
+					return array(
+						"message" => sprintf("Cannot add a new CNAME record when a record of another type is already present for %s", $this->name),
+						"code" => "RECORD_CNAME_OTHER_PRESENT"
+					);
+				}
 			}
 
 			if ($this->type == 'CNAME') {
