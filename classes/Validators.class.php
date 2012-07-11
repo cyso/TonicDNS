@@ -23,7 +23,8 @@ define("VALID_NAME", "#^[\w_-]+$#");
 define("VALID_STRING", "#^[\w -+.]*$#");
 define("VALID_QUOTED", "#^[\"]{1}.*[\"]{1}$#");
 define("VALID_TOKEN", "#^[0-9a-f]{40}$#");
-define("VALID_ZONE_TYPE", "#MASTER|SLAVE|NATIVE#");
+define("VALID_HEX_40", "#^[0-9a-f]{40}$#i");
+define("VALID_ZONE_TYPE", "#^MASTER$|^SLAVE$|^NATIVE$#");
 if (ValidatorConfig::BIND_COMPATABILITY === true) {
 	define("VALID_DOMAIN", "#^(?:[A-Z0-9](?:[A-Z0-9\-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}[\.]?$#i");
 } else {
@@ -241,6 +242,7 @@ class ZoneValidator extends Validator {
 			if ($entry instanceof stdClass) {
 				if (!isset($entry->identifier)) {
 					$errors[] = "Zone template identifier was not set.";
+					continue;
 				}
 				$template->identifier = $entry->identifier;
 			} else {
@@ -382,31 +384,36 @@ class RecordValidator extends Validator {
 
 	public function check_record_type($content) {
 		if (preg_match(VALID_RECORD_TYPE, $content) === 0) {
-			return false;
+			return array(
+				"message" => "Record has invalid type",
+				"code" => "RECORD_INVALID_TYPE"
+			);
 		}
 		if ($this->record_mode == "ADD") {
-			if ($this->type != 'CNAME' && in_array($this->name, RecordValidator::$cnames)) {
-				return array(
-					"message" => sprintf("Cannot add a new record of type %s when a CNAME record is being inserted for %s", $this->type, $this->name),
-					"code" => "RECORD_CNAME_ALREADY_INSERT"
-				);
-			} else if ($this->type == 'CNAME' && in_array($this->name, RecordValidator::$others)) {
-				return array(
-					"message" => sprintf("Cannot add a new CNAME record when a record of another type is being inserted for %s", $this->name),
-					"code" => "RECORD_CNAME_OTHER_INSERT"
-				);
-			}
+			if (!defined("TESTING_MODE")) {
+				if ($this->type != 'CNAME' && in_array($this->name, RecordValidator::$cnames)) {
+					return array(
+						"message" => sprintf("Cannot add a new record of type %s when a CNAME record is being inserted for %s", $this->type, $this->name),
+						"code" => "RECORD_CNAME_ALREADY_INSERT"
+					);
+				} else if ($this->type == 'CNAME' && in_array($this->name, RecordValidator::$others)) {
+					return array(
+						"message" => sprintf("Cannot add a new CNAME record when a record of another type is being inserted for %s", $this->name),
+						"code" => "RECORD_CNAME_OTHER_INSERT"
+					);
+				}
 
-			if ($this->type != 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("CNAME"), RecordValidator::$deletions) != false) {
-				return array(
-					"message" => sprintf("Cannot add a new record of type %s when a CNAME record is already present for %s", $this->type, $this->name),
-					"code" => "RECORD_CNAME_ALREADY_PRESENT"
-				);
-			} else if ($this->type == 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("!CNAME"), RecordValidator::$deletions) != false) {
-				return array(
-					"message" => sprintf("Cannot add a new CNAME record when a record of another type is already present for %s", $this->name),
-					"code" => "RECORD_CNAME_OTHER_PRESENT"
-				);
+				if ($this->type != 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("CNAME"), RecordValidator::$deletions) != false) {
+					return array(
+						"message" => sprintf("Cannot add a new record of type %s when a CNAME record is already present for %s", $this->type, $this->name),
+						"code" => "RECORD_CNAME_ALREADY_PRESENT"
+					);
+				} else if ($this->type == 'CNAME' && HelperFunctions::has_records_of_type($this->name, array("!CNAME"), RecordValidator::$deletions) != false) {
+					return array(
+						"message" => sprintf("Cannot add a new CNAME record when a record of another type is already present for %s", $this->name),
+						"code" => "RECORD_CNAME_OTHER_PRESENT"
+					);
+				}
 			}
 
 			if ($this->type == 'CNAME') {
@@ -445,7 +452,7 @@ class RecordValidator extends Validator {
 		}
 
 		if (!isset($this->type) || empty($this->type)) {
-			return false;
+			return $prefix . "Type may never be empty.";
 		}
 
 		if (strlen($content) > 4096) {
@@ -520,7 +527,7 @@ class RecordValidator extends Validator {
 				case 1:
 					if (!ctype_digit($parts[$i])) {
 						return array(
-							"message" => $prefix . "NAPTR record part $i must be a valid integer.",
+							"message" => $prefix . sprintf("NAPTR record part %d must be a valid integer.", $i+1),
 							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 						);
 					}
@@ -530,7 +537,7 @@ class RecordValidator extends Validator {
 				case 4:
 					if (preg_match(VALID_QUOTED, $parts[$i]) === 0) {
 						return array(
-							"message" => $prefix . "NAPTR record part $i must be a valid quoted string.",
+							"message" => $prefix . sprintf("NAPTR record part %d must be a valid quoted string.", $i+1),
 							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 						);
 					}
@@ -538,7 +545,7 @@ class RecordValidator extends Validator {
 				case 5:
 					if (preg_match(VALID_NOTEMPTY, $parts[$i]) === 0) {
 						return array(
-							"message" => $prefix . "NAPTR record part $i must be a valid record pointer, or a single dot (.).",
+							"message" => $prefix . sprintf("NAPTR record part %d must be a valid record pointer, or a single dot (.).", $i+1),
 							"code" => "RECORD_RHS_NAPTR_INVALID_PART_" . $i
 						);
 					}
@@ -616,7 +623,7 @@ class RecordValidator extends Validator {
 				case 6:
 					if (!ctype_digit($parts[$i])) {
 						return array(
-							"message" => "SOA record part $i must be a valid integer.",
+							"message" => sprintf("SOA record part %d must be a valid integer.", $i+1),
 							"code" => "RECORD_RHS_SOA_INVALID_PART_" . $i
 						);
 					}
@@ -696,7 +703,7 @@ class RecordValidator extends Validator {
 				case 1:
 					if (!ctype_digit($parts[$i])) {
 						return array(
-							"message" => $prefix . "SRV record part $i must be a valid integer.",
+							"message" => $prefix . sprintf("SRV record part %d must be a valid integer.", $i+1),
 							"code" => "RECORD_RHS_SRV_INVALID_PART_" . $i
 						);
 					}
@@ -725,7 +732,7 @@ class RecordValidator extends Validator {
 	}
 
 	public function check_record_priority($content) {
-	  if (($this->type == "MX") || ($this->type == "SRV")) {
+		if (($this->type == "MX") || ($this->type == "SRV")) {
 			if (preg_match(VALID_INT, $content)) {
 				return true;
 			}
@@ -734,9 +741,11 @@ class RecordValidator extends Validator {
 				return true;
 			}
 		}
-		return false;
+		return array(
+			"message" => "Record has invalid priority",
+			"code" => "RECORD_INVALID_PRIORITY"
+		);
 	}
-
 }
 
 class ArpaValidator extends Validator {
