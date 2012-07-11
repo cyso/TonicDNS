@@ -24,6 +24,36 @@ require_once("classes/HelperFunctions.class.php");
 require_once("classes/Validators.class.php");
 
 /**
+ * Mock Database generator
+ */
+class Database {
+	public static function getConnection() {
+		return null;
+	}
+}
+
+/**
+ * Mock PowerDNSConfig
+ */
+class PowerDnsConfig {
+	const DB_DSN = "";
+	const DB_USER = "";
+	const DB_PASS = "";
+	const DB_TEMPLATE_TABLE = "zone_templ";
+	const DB_TEMPLATE_RECORDS_TABLE = "zone_templ_records";
+	const DB_ZONE_TABLE = "domains";
+	const DB_RECORD_TABLE = "records";
+	const DB_USER_TABLE = "users";
+	const DB_TOKEN_TABLE = "tokens";
+	const DNS_DEFAULT_RECORD_TTL = 86400;
+	const DNS_DEFAULT_RECORD_PRIORITY = 0;
+	const TOKEN_BACKEND = "PDO";
+	const TOKEN_DEFAULT_DURATION = 60;
+	const TOKEN_SECRET = "";
+}
+
+
+/**
  * HelperFunctions unit tests
  */
 class HelperFunctionsTest extends PHPUnit_Framework_TestCase {
