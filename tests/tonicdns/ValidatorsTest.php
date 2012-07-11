@@ -265,6 +265,8 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function test_validate_record() {
+		echo "\n";
+
 		// Missing content
 		$data = array(
 			"name" => "example.toolongtld",
@@ -354,44 +356,55 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse($validator->validates());
 		$this->assertCount(1, $validator->getErrors());
 
-		// Invalid NAPTR record
+		// NAPTR records
 		$data['type'] = "NAPTR";
-		$data['content'] = "only three parts";
 
-		$validator = new RecordValidator($data);
+		$wrong = array(
+			'only three parts',
+			'a 20 "s" "SIP+I2C" "" .',
+			'10 b "s" "SIP+I2C" "" .',
+			'10 20 s "SIP+I2C" "" .',
+			'10 20 "!" "SIP+I2C" "" .',
+			'10 20 "su" "SIP+I2C" "" .',
+			'10 20 "s" SIP+I2C "" .',
+			'10 20 "s" "" "" .',
+			'10 20 "s" "+I2C" "" .',
+			'10 20 "s" "SIP+I2C" A .',
+			'10 20 "s" "SIP+I2C" "iAiAi" .',
+			'10 20 "s" "SIP+I2C" "!A!" .',
+			'10 20 "s" "SIP+I2C" "!A!A!z" .',
+			'10 20 "s" "SIP+I2C" "!A!\\1!z" .',
+			'10 20 "s" "SIP+I2C" "!A!\\1!z" example.com.',
+			'10 20 "s" "SIP+I2C" "" ',
+		);
 
-		$this->assertFalse($validator->validates());
-		$this->assertCount(1, $validator->getErrors());
+		$right = array(
+			'10 20 "s" "SIP+I2C" "" .',
+			'10 20 "p" "" "" .',
+			'10 20 "s" "SIP+I2C" "!A!\\3!i" .',
+			'10 20 "u" "SIP+I2C" "" .',
+			'10 20 "u" "SIP+I2C" "" example.com.',
+		);
 
-		$data['content'] = 'a 10 "+A+B" "SIP" "" .';
+		foreach($wrong as $w) {
+			printf("Testing /%s/\n", $w);
+			$data['content'] = $w;
 
-		$validator = new RecordValidator($data);
+			$validator = new RecordValidator($data);
 
-		$this->assertFalse($validator->validates());
-		$this->assertCount(1, $validator->getErrors());
+			$this->assertFalse($validator->validates());
+			$this->assertCount(1, $validator->getErrors());
+		}
 
-		$data['content'] = '10 10 +A+B "SIP" "" .';
+		foreach($right as $r) {
+			printf("Testing /%s/\n", $r);
+			$data['content'] = $r;
 
-		$validator = new RecordValidator($data);
+			$validator = new RecordValidator($data);
 
-		$this->assertFalse($validator->validates());
-		$this->assertCount(1, $validator->getErrors());
-
-		$data['content'] = '10 10 "+A+B" "SIP" "" ';
-
-		$validator = new RecordValidator($data);
-
-		$this->assertFalse($validator->validates());
-		$this->assertCount(1, $validator->getErrors());
-
-		// Valid NAPTR record
-		$data['content'] = '10 10 "+A+B" "SIP" "" .';
-
-		$validator = new RecordValidator($data);
-		$validator->validates();
-
-		$this->assertTrue($validator->validates());
-		$this->assertEmpty($validator->getErrors());
+			$this->assertTrue($validator->validates());
+			$this->assertEmpty($validator->getErrors());
+		}
 
 		// Invalid RP record
 		$data['type'] = "RP";
