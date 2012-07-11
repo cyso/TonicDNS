@@ -384,7 +384,10 @@ class RecordValidator extends Validator {
 
 	public function check_record_type($content) {
 		if (preg_match(VALID_RECORD_TYPE, $content) === 0) {
-			return false;
+			return array(
+				"message" => "Record has invalid type",
+				"code" => "RECORD_INVALID_TYPE"
+			);
 		}
 		if ($this->record_mode == "ADD") {
 			if (!defined("TESTING_MODE")) {
@@ -729,7 +732,7 @@ class RecordValidator extends Validator {
 	}
 
 	public function check_record_priority($content) {
-	  if (($this->type == "MX") || ($this->type == "SRV")) {
+		if (($this->type == "MX") || ($this->type == "SRV")) {
 			if (preg_match(VALID_INT, $content)) {
 				return true;
 			}
@@ -738,9 +741,11 @@ class RecordValidator extends Validator {
 				return true;
 			}
 		}
-		return false;
+		return array(
+			"message" => "Record has invalid priority",
+			"code" => "RECORD_INVALID_PRIORITY"
+		);
 	}
-
 }
 
 class ArpaValidator extends Validator {
