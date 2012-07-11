@@ -78,3 +78,79 @@ conf $ cp validator.conf.php.default validator.conf.php
 conf $ vim *.conf.php
 ```
 
+Unit Test Dependencies
+======================
+
+PHPLoc
+------
+https://github.com/sebastianbergmann/phploc/
+```
+# pear config-set auto_discover 1
+# pear install pear.phpunit.de/phploc
+```
+
+Pdepend
+-------
+http://pdepend.org/download/index.html
+```
+# pear channel-discover pear.pdepend.org
+# pear install pdepend/PHP_Depend-beta
+```
+
+PHPmd
+-----
+http://phpmd.org/download/index.html
+```
+# pear channel-discover pear.phpmd.org
+# pear channel-discover pear.pdepend.org
+# pear install --alldeps phpmd/PHP_PMD
+```
+
+PHPcs
+-----
+http://pear.php.net/package/PHP_CodeSniffer
+```
+# pear install PHP_CodeSniffer
+```
+
+PHPcpd
+------
+https://github.com/sebastianbergmann/phpcpd/
+```
+# pear config-set auto_discover 1
+# pear install pear.phpunit.de/phpcpd
+```
+
+PHPdoc
+------
+http://www.phpdoc.org/
+```
+# pear channel-discover pear.phpdoc.org
+# pear install phpdoc/phpDocumentor-alpha
+```
+
+PHPcb
+-----
+http://blog.thinkphp.de/archives/464-PHP_CodeBrowser-Release-version-0.1.0.html
+```
+# pear channel-discover pear.phpunit.de
+# pear install --alldeps phpunit/PHP_CodeBrowser 
+# pear install channel://pear.php.net/Text_Highlighter-0.7.3
+```
+
+Running Unit Tests
+==================
+
+To run the whole test suite:
+
+```
+$ ant
+```
+
+To run just the unit tests:
+
+```
+$ ant phpunit
+```
+
+Check the `build` folder for the results of the test suite.
