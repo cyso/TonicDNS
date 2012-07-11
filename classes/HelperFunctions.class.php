@@ -221,7 +221,7 @@ class HelperFunctions {
 
 	public function has_records_of_type($name, $types = array(), $filters = array()) {
 		try {
-			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			$connection = Database::getConnection();
 		} catch (PDOException $e) {
 			return null;
 		}

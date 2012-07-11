@@ -66,7 +66,7 @@ class PDOTokenBackend implements TokenBackend {
 	 */
 	public function __construct() {
 		try {
-			$this->connection = new PDO(PowerDnsConfig::DB_DSN, PowerDnsConfig::DB_USER, PowerDnsConfig::DB_PASS);
+			$this->connection = Database::getConnection();
 		} catch (Exception $e) {
 			throw new Exception("Failed to open database connection");
 		}
