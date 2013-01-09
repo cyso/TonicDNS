@@ -23,7 +23,7 @@
 class TemplateFunctions {
 	public static function get_all_templates($response, &$out = null) {
 		try {
-			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			$connection = Database::getConnection();
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
@@ -61,7 +61,7 @@ class TemplateFunctions {
 
 	public static function get_template($response, $identifier, &$out = null) {
 		try {
-			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			$connection = Database::getConnection();
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
@@ -136,7 +136,7 @@ class TemplateFunctions {
 		}
 
 		try {
-			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			$connection = Database::getConnection();
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
@@ -233,7 +233,7 @@ class TemplateFunctions {
 		}
 
 		try {
-			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			$connection = Database::getConnection();
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";

@@ -23,7 +23,7 @@
 class ZoneFunctions {
 	public function get_all_zones($response, &$out = null, $query = null) {
 		try {
-			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			$connection = Database::getConnection();
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
@@ -110,7 +110,7 @@ class ZoneFunctions {
 		}
 
 		try {
-			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			$connection = Database::getConnection();
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
@@ -232,7 +232,7 @@ class ZoneFunctions {
 		}
 
 		try {
-			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			$connection = Database::getConnection();
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
@@ -311,7 +311,7 @@ class ZoneFunctions {
 		$commit = false;
 		if ($connection === null) {
 			try {
-				$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+				$connection = Database::getConnection();
 			} catch (PDOException $e) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = "Could not connect to PowerDNS server.";
@@ -437,7 +437,7 @@ class ZoneFunctions {
 		unset($o);
 
 		try {
-			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			$connection = Database::getConnection();
 			$connection->beginTransaction();
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
@@ -556,7 +556,7 @@ class ZoneFunctions {
 		unset($o);
 
 		try {
-			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			$connection = Database::getConnection();
 		} catch (PDOException $e) {
 			$response->code = Response::INTERNALSERVERERROR;
 			$response->error = "Could not connect to PowerDNS server.";
@@ -631,7 +631,7 @@ class ZoneFunctions {
 		$commit = false;
 		if ($connection === null) {
 			try {
-				$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+				$connection = Database::getConnection();
 			} catch (PDOException $e) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = "Could not connect to PowerDNS server.";

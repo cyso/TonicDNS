@@ -8,7 +8,7 @@ This a RESTful API for PowerDNS licensed under GPL. It uses the MIT licensed Ton
 Features:
 
 * Token based communication.
-* Option to store tokens in the PowerDNS database, or in a seperate SQLite database.
+* Option to store tokens in the PowerDNS database, or in a separate SQLite database.
 * Should work with any PowerDNS backend database, tested with MySQL.
 * Supports adding of zones, records and zone and record templates.
 * Atomic commits, all modifications are validated on input and executed in a single transaction.
@@ -35,7 +35,7 @@ Clone the repo.
 $ git clone git://github.com/Cysource/TonicDNS.git
 ```
 
-Create a new VirtualHost in Apache. I recommend using mod_itk and using a seperate user account for running TonicDNS. I also recommend running the communication over SSL, as TonicDNS doesn't provide any encryption on its own (nor will it ever). The example below assumes you follow these recommendations. 
+Create a new VirtualHost in Apache. I recommend using mod_itk and using a separate user account for running TonicDNS. I also recommend running the communication over SSL, as TonicDNS doesn't provide any encryption on its own (nor will it ever). The example below assumes you follow these recommendations. 
 
 ```
 <VirtualHost *:80>
@@ -78,3 +78,79 @@ conf $ cp validator.conf.php.default validator.conf.php
 conf $ vim *.conf.php
 ```
 
+Unit Test Dependencies
+======================
+
+PHPLoc
+------
+https://github.com/sebastianbergmann/phploc/
+```
+# pear config-set auto_discover 1
+# pear install pear.phpunit.de/phploc
+```
+
+Pdepend
+-------
+http://pdepend.org/download/index.html
+```
+# pear channel-discover pear.pdepend.org
+# pear install pdepend/PHP_Depend-beta
+```
+
+PHPmd
+-----
+http://phpmd.org/download/index.html
+```
+# pear channel-discover pear.phpmd.org
+# pear channel-discover pear.pdepend.org
+# pear install --alldeps phpmd/PHP_PMD
+```
+
+PHPcs
+-----
+http://pear.php.net/package/PHP_CodeSniffer
+```
+# pear install PHP_CodeSniffer
+```
+
+PHPcpd
+------
+https://github.com/sebastianbergmann/phpcpd/
+```
+# pear config-set auto_discover 1
+# pear install pear.phpunit.de/phpcpd
+```
+
+PHPdoc
+------
+http://www.phpdoc.org/
+```
+# pear channel-discover pear.phpdoc.org
+# pear install phpdoc/phpDocumentor-alpha
+```
+
+PHPcb
+-----
+http://blog.thinkphp.de/archives/464-PHP_CodeBrowser-Release-version-0.1.0.html
+```
+# pear channel-discover pear.phpunit.de
+# pear install --alldeps phpunit/PHP_CodeBrowser 
+# pear install channel://pear.php.net/Text_Highlighter-0.7.3
+```
+
+Running Unit Tests
+==================
+
+To run the whole test suite:
+
+```
+$ ant
+```
+
+To run just the unit tests:
+
+```
+$ ant phpunit
+```
+
+Check the `build` folder for the results of the test suite.

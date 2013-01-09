@@ -221,7 +221,7 @@ class HelperFunctions {
 
 	public function has_records_of_type($name, $types = array(), $filters = array()) {
 		try {
-			$connection = new PDO(PowerDNSConfig::DB_DSN, PowerDNSConfig::DB_USER, PowerDNSConfig::DB_PASS);
+			$connection = Database::getConnection();
 		} catch (PDOException $e) {
 			return null;
 		}
@@ -267,5 +267,21 @@ class HelperFunctions {
 		} else {
 			return $count;
 		}
+	}
+
+	public function str_replace_once($str_pattern, $str_replacement, $string) {
+		if (($pos = strpos($string, $str_pattern)) !== false) {
+			return substr_replace($string, $str_replacement, $pos, strlen($str_pattern));
+		}
+
+		return $string;
+	}
+
+	public function str_replace_last($str_pattern, $str_replacement, $string) {
+		if (($pos = strrpos($string, $str_pattern)) !== false) {
+			return substr_replace($string, $str_replacement, $pos, strlen($str_pattern));
+		}
+
+		return $string;
 	}
 }
