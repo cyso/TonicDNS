@@ -305,13 +305,13 @@ Prepare a JSON file (zone.json).
 {
 	"name": "example.org",
 	"type": "MASTER",
-	"master: null,
+	"master": null,
 	"templates": 
 	[
 		{
 			"identifier": "sample1"
 		}
-	]
+	],
 	"records": 
 	[ 
 		{
