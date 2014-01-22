@@ -68,7 +68,7 @@ class PDOTokenBackend implements TokenBackend {
 		try {
 			$this->connection = Database::getConnection();
 		} catch (Exception $e) {
-			throw new Exception("Failed to open database connection");
+			throw new Exception("Failed to open database connection: $e");
 		}
 	}
 

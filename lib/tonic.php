@@ -322,6 +322,11 @@ class Request {
                 $raw_headers = apache_request_headers();
         } else if (function_exists("nsapi_request_headers")) {
                 $raw_headers = nsapi_request_headers();
+        } else if (substr(php_sapi_name(), -3) == 'cgi' ) {
+		$this->requestType = $_SERVER['HTTP_CONTENT_TYPE'];
+		if (isset( $_SERVER['HTTP_X_AUTHENTICATION_TOKEN'] )){
+			$this->requestToken = $_SERVER['HTTP_X_AUTHENTICATION_TOKEN'];
+		}
         }
         foreach ($raw_headers as $k => $h) {
                 switch (strtolower($k)) {
@@ -761,7 +766,6 @@ class NoResource extends Resource {
      * @return Response
      */
     function exec($request) {
-        
         // send 404 not found
         $response = new Response($request);
         $response->code = Response::NOTFOUND;

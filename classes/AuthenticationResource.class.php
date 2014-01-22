@@ -51,7 +51,7 @@ class AuthenticationResource extends AnonymousResource {
 				break;
 			}
 		} catch (Exception $e) {
-			trigger_error($e->message, E_USER_ERROR);
+			trigger_error($e, E_USER_ERROR);
 		}
 	}
 
