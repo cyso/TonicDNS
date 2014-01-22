@@ -66,6 +66,7 @@ class ZoneFunctions {
 		$output = array();
 		while (($row = $result->fetch(PDO::FETCH_ASSOC)) !== false ) {
 			$zone = array();
+			$zone['z_id'] = $row['z_id'];
 			$zone['name'] = $row['z_name'];
 			$zone['type'] = $row['z_type'];
 			if (!empty($row['z_master'])) { $zone['master'] = $row['z_master']; }
@@ -86,7 +87,7 @@ class ZoneFunctions {
 		return ZoneFunctions::get_all_zones($response, $out, $query);
 	}
 
-	public function get_zone($response, $identifier, &$out = null, $details = true, $arpa_expand = true, $include_zone_id = false) {
+	public function get_zone($response, $identifier, &$out = null, $details = true, $arpa_expand = true, $include_zone_id = true) {
 		$arpa = null;
 		if (preg_match(VALID_IPV4, $identifier) === 1) {
 			$arpa = HelperFunctions::ipv4_to_arpa($identifier);
@@ -162,6 +163,7 @@ class ZoneFunctions {
 			}
 
 			$record = array();
+			$record['r_id'] = $row['r_id'];
 			$record['name'] = $row['r_name'];
 			$record['type'] = $row['r_type'];
 			$record['content'] = $row['r_content'];
@@ -215,7 +217,9 @@ class ZoneFunctions {
 					foreach ($p['entries'] as $entry) {
 						$e = new stdClass();
 						$e->name = str_replace(array("[ZONE]"), array($data->name), $entry['name']);
-						$e->content = str_replace(array("[ZONE]"), array($data->name), $entry['content']);
+						$e->content = str_replace(
+							array("[ZONE]","[SERIAL]"), 
+							array($data->name,date("Ymd00")), $entry['content']);
 						$e->type = $entry['type'];
 						$e->ttl = $entry['ttl'];
 						$e->priority = $entry['priority'];
@@ -552,7 +556,7 @@ class ZoneFunctions {
 			$out = false;
 			return $response;
 		}
-
+		$z_id = $o['z_id'];
 		unset($o);
 
 		try {
@@ -567,6 +571,21 @@ class ZoneFunctions {
 
 		$connection->beginTransaction();
 
+		$statement = $connection->prepare(sprintf(
+			"DELETE FROM `%s` WHERE domain_id = :z_id;", PowerDNSConfig::DB_RECORD_TABLE
+		));
+
+		if ($statement->execute(array(":z_id" => $z_id)) === false) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not query PowerDNS server.";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
+
+			$connection->rollback();
+			$out = false;
+
+			return $response;
+		}
+		$response->log_message = sprintf("Zone's %s records were deleted. ", $identifier);
 		$statement = $connection->prepare(sprintf(
 			"DELETE FROM `%s` WHERE name = :name;", PowerDNSConfig::DB_ZONE_TABLE
 		));
@@ -586,7 +605,7 @@ class ZoneFunctions {
 
 		$response->code = Response::OK;
 		$response->body = true;
-		$response->log_message = sprintf("Zone %s was deleted.", $identifier);
+		$response->log_message .= sprintf("Zone %s was deleted.", $identifier);
 		$out = true;
 
 		return $response;
@@ -639,10 +658,10 @@ class ZoneFunctions {
 				$out = false;
 				return $response;
 			}
-
 			$connection->beginTransaction();
 			$commit = true;
 		}
+		
 
 		$statement = $connection->prepare(sprintf(
 			"DELETE FROM `%s` WHERE domain_id = :did AND name = :name AND type = :type AND prio = :priority AND content = :content;", PowerDNSConfig::DB_RECORD_TABLE
@@ -663,37 +682,41 @@ class ZoneFunctions {
 		$statement_noprio->bindParam(":type", $r_type);
 		$statement_noprio->bindParam(":content", $r_content);
 
+		$statement_rid = $connection->prepare(sprintf("DELETE FROM `%s` WHERE id = :rid",PowerDNSConfig::DB_RECORD_TABLE));
+		$statement_rid->bindParam(":rid", $r_rid);
+
 		$r_did = $zone_id;
 
 		foreach ($data->records as $record) {
 			$stmt = $statement_noprio;
-			if (!isset($record->name) || !isset($record->type) || !isset($record->content)) {
+			if ( (!isset($record->name) || !isset($record->type) || !isset($record->content)) && !isset($record->r_id) ) {
 				continue;
 			}
-
-			if (($record->type == "MX") || ($record->type == "SRV")) {
-				if (!isset($record->priority)) {
-					continue;
-				} else {
-					$stmt = $statement;
+			if ( isset( $record->r_id ) ){
+				$stmt = $statement_rid;
+				$r_rid = $record->r_id;
+			} else {
+				if (($record->type == "MX") || ($record->type == "SRV")) {
+					if (!isset($record->priority)) {
+						continue;
+					} else {
+						$stmt = $statement;
+					}
 				}
+	
+				$r_name = $record->name;
+				$r_type = $record->type;
+				$r_content = $record->content;
+				$r_prio = $record->priority;
 			}
-
-			$r_name = $record->name;
-			$r_type = $record->type;
-			$r_content = $record->content;
-			$r_prio = $record->priority;
-
 			if ($stmt->execute() === false) {
 				$response->code = Response::INTERNALSERVERERROR;
 				$response->error = sprintf("Rolling back transaction, failed to delete zone record - name: '%s', type: '%s', prio: '%s'", $r_name, $r_type, $r_prio);
 				$response->error_detail = "RECORD_DELETE_FAILED";
-
 				if ($commit == true) {
 					$connection->rollback();
 				}
 				$out = false;
-
 				return $response;
 			}
 		}
