@@ -498,18 +498,21 @@ class ZoneFunctions {
 		if (isset($data->records)) {
 			$deletions = array();
 			$additions = array();
+			$updates = array();
 			foreach ($data->records as $record) {
 				if (isset($record->mode) && $record->mode == "delete") {
 					$deletions[] = $record;
+				} elseif (isset($record->mode) && $record->mode == "update") {
+					$updates[] = $record;
 				} else {
 					$additions[] = $record;
 				}
 			}
-
+			$records_responses = array();
 			if (!empty($deletions)) {
 				$obj = new StdClass();
 				$obj->records = $deletions;
-				ZoneFunctions::delete_records($response, $identifier, $obj, $out, $connection);
+				$records_responses[] = ZoneFunctions::delete_records($response, $identifier, $obj, $out, $connection);
 
 				if (!$out) {
 					$connection->rollback();
@@ -520,10 +523,24 @@ class ZoneFunctions {
 				unset($obj);
 			}
 
+			if (!empty($updates)) {
+				$obj = new StdClass();
+				$obj->records = $updates;
+				$records_responses[] = ZoneFunctions::update_records($response, $identifier, $obj, $out, $connection);
+			
+				if (!$out) {
+					$connection->rollback();
+					$out = false;
+					return $response;
+				}
+			
+				unset($obj);
+			}
+			
 			if (!empty($additions)) {
 				$obj = new StdClass();
 				$obj->records = $additions;
-				ZoneFunctions::create_records($response, $identifier, $obj, $out, true, $connection);
+				$records_responses[] = ZoneFunctions::create_records($response, $identifier, $obj, $out, true, $connection);
 
 				if (!$out) {
 					$connection->rollback();
@@ -540,7 +557,10 @@ class ZoneFunctions {
 		$response->code = Response::OK;
 		$response->body = true;
 		if (isset($data->records)) {
-			$response->log_message = sprintf("Zone %s was modified, deleted %d records and added %d records.", $identifier, count($deletions), count($additions));
+			$response->log_message = sprintf("Zone %s was modified: [%s]", 
+					$identifier,
+					implode("|",array_map(function ($v){return $v->log_message;}, $records_responses))
+			);
 		} else {
 			$response->log_message = sprintf("Zone %s was modified.", $identifier);
 		}
@@ -610,7 +630,100 @@ class ZoneFunctions {
 
 		return $response;
 	}
-
+	public function update_records($response, $identifier, $data, &$out = null, $connection = null) {
+		if (!is_object($data) || !isset($data->records)) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Updates data invalid";
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
+			$out = false;
+			return $response;
+		}
+		
+		ZoneFunctions::get_zone($response, $identifier, $o, false, true, true);
+		
+		if (empty($o)) {
+			$out = false;
+			return $response;
+		}
+		
+		if ($o['type'] == "SLAVE") {
+			$response->code = Response::CONFLICT;
+			$response->error = sprintf("Cannot update records from SLAVE zone %s", $identifier);
+			$response->error_detail = "ZONE_IS_SLAVE";
+			$out = false;
+			return $response;
+		}
+		
+		$zone_id = $o['z_id'];
+		
+		if (empty($zone_id) || !ctype_digit($zone_id)) {
+			$response->code = Response::INTERNALSERVERERROR;
+			$response->error = "Could not retrieve Zone ID to delete records from" . var_export($o, true);
+			$response->error_detail = "INTERNAL_SERVER_ERROR";
+			$out = false;
+			return $response;
+		}
+		
+		unset($o);
+		
+		$commit = false;
+		if ($connection === null) {
+			try {
+				$connection = Database::getConnection();
+			} catch (PDOException $e) {
+				$response->code = Response::INTERNALSERVERERROR;
+				$response->error = "Could not connect to PowerDNS server.";
+				$response->error_detail = "INTERNAL_SERVER_ERROR";
+				$out = false;
+				return $response;
+			}
+			$connection->beginTransaction();
+			$commit = true;
+		}
+		
+		$updated = 0;
+		foreach ($data->records as $record) {
+			if ( !isset($record->r_id) ) {
+				continue;
+			}
+			//need at least 3 attributes. mode, r_id and something to update
+			if ( isset( $record->r_id ) && count( (array) $record) < 3 ){
+				continue;
+			}
+			foreach ( array_keys( (array)$record ) as $f_name ){
+				if ( !in_array($f_name, array( 'prio','content','name','ttl','type') ) ) continue;
+				$stmt = $connection->prepare(sprintf(
+					"UPDATE `%s` SET `%s` = :f_value WHERE domain_id = %s AND id = :r_id;", PowerDNSConfig::DB_RECORD_TABLE,$f_name,$zone_id
+				));
+				$stmt->bindParam(":r_id", $record->r_id);
+				$stmt->bindParam(":f_value", $record->$f_name);
+				//$r_id = $record->r_id;
+				//$f_value = $record->$f_name;
+				if ($stmt->execute() === false) {
+					$response->code = Response::INTERNALSERVERERROR;
+					$response->error = sprintf("Rolling back transaction, failed to update zone record - did: '%s', r_id: '%s', key: '%s', value: '%s'", $zone_id,$record->r_id, $f_name, $record->$f_name);
+					$response->error_detail = "RECORD_UPDATE_FAILED";
+					if ($commit == true) {
+						$connection->rollback();
+					}
+					$out = false;
+					return $response;
+				}
+				$updated++;
+			}
+		}
+		
+		if ($commit == true) {
+			$connection->commit();
+		}
+		
+		$response->code = Response::OK;
+		$response->body = true;
+		$response->log_message = sprintf("Zone %s updated %d of %d records.", $identifier, $updated,count($data->records));
+		$out = true;
+		
+		return $response;
+	}
 	public function delete_records($response, $identifier, $data, &$out = null, $connection = null) {
 		if (!is_object($data) || !isset($data->records)) {
 			$response->code = Response::INTERNALSERVERERROR;
