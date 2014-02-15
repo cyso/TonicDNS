@@ -776,25 +776,30 @@ class RecordValidator extends Validator {
 			for ($i = 0; $i < count($parts); $i++) {
 				switch ($i) {
 				case 0:
-					if ($parts[$i] != "1" && $parts[$i] != "2") {
+					if ($parts[$i] != "1" && $parts[$i] != "2" && $parts[$i] != "3") {
 						return array(
-							"message" => $prefix . "A SSHFP record must provide either 1 (RSA) or 2 (DSA) as algorithm.",
+							"message" => $prefix . "A SSHFP record must provide either 1 (RSA), 2 (DSA) or 3 (ECDSA) as algorithm.",
 							"code" => "RECORD_RHS_SSHFP_INVALID_PART_0"
 						);
 					}
 					break;
 				case 1:
-					if ($parts[$i] != "1") {
+					if ($parts[$i] != "1" && $parts[$i] != "2") {
 						return array(
-							"message" => $prefix . "A SSHFP record must provide 1 (SHA-1) as fp-type.",
+							"message" => $prefix . "A SSHFP record must provide 1 (SHA-1) or 2 (SHA-256) as fp-type.",
 							"code" => "RECORD_RHS_SSHFP_INVALID_PART_1"
 						);
 					}
 					break;
 				case 2:
-					if (strlen($parts[$i]) !== 40) {
+					if ($parts[1] == "1" && strlen($parts[$i]) !== 40) {
 						return array(
-							"message" => $prefix . "A SSHFP record must provide a fingerprint as a 40 character ASCII hexadecimal string.",
+							"message" => $prefix . "A SSHFP record must provide a SHA-1 fingerprint as a 40 character ASCII hexadecimal string.",
+							"code" => "RECORD_RHS_SSHFP_INVALID_PART_2"
+						);
+					} else if ($parts[1] == "2" && strlen($parts[$i]) !== 64) {
+						return array(
+							"message" => $prefix . "A SSHFP record must provide a SHA-256 fingerprint as a 64 character ASCII hexadecimal string.",
 							"code" => "RECORD_RHS_SSHFP_INVALID_PART_2"
 						);
 					}
