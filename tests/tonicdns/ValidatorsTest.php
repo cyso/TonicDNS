@@ -511,13 +511,6 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse($validator->validates());
 		$this->assertCount(1, $validator->getErrors());
 
-		$data['content'] = "3 1 0123456789ABCDEF0123456789ABCDEF01234567";
-
-		$validator = new RecordValidator($data);
-
-		$this->assertFalse($validator->validates());
-		$this->assertCount(1, $validator->getErrors());
-
 		$data['content'] = "1 2 0123456789ABCDEF0123456789ABCDEF01234567";
 
 		$validator = new RecordValidator($data);
@@ -534,6 +527,13 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 
 		// Valid SSHFP
 		$data['content'] = "1 1 0123456789ABCDEF0123456789ABCDEF01234567";
+
+		$validator = new RecordValidator($data);
+
+		$this->assertTrue($validator->validates());
+		$this->assertEmpty($validator->getErrors());
+
+		$data['content'] = "3 2 0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
 
 		$validator = new RecordValidator($data);
 
