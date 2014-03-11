@@ -334,6 +334,16 @@ class Request {
                 }
         }
 
+        // Alternative headers check
+        if (count($raw_headers) == 0) {
+            if (array_key_exists('HTTP_CONTENT-TYPE', $_SERVER)) {
+                $this->requestType = $_SERVER['HTTP_CONTENT-TYPE'];
+            }
+            if (array_key_exists('HTTP_X_AUTHENTICATION_TOKEN', $_SERVER)) {
+                $this->requestToken = $_SERVER['HTTP_X_AUTHENTICATION_TOKEN'];
+            }
+        }
+
         // get HTTP query string
         $this->queryString = $this->getConfig($config, NULL, 'QUERY_STRING');
         
