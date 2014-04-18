@@ -32,10 +32,10 @@ define("VALID_TOKEN", "#^[0-9a-f]{40}$#");
 define("VALID_HEX_40", "#^[0-9a-f]{40}$#i");
 define("VALID_ZONE_TYPE", "#^MASTER$|^SLAVE$|^NATIVE$#");
 if (ValidatorConfig::BIND_COMPATABILITY === true) {
-	define("VALID_DOMAIN", "#^(?:[A-Z0-9](?:[A-Z0-9\-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}[\.]?$#i");
+	define("VALID_DOMAIN", "#^(?:[A-Z0-9_](?:[A-Z0-9\-_]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}[\.]?$#i");
 	define("VALID_EMPTY_DOMAIN", "#^\.$|^$#");
 } else {
-	define("VALID_DOMAIN", "#^(?:[A-Z0-9](?:[A-Z0-9\-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}$#i");
+	define("VALID_DOMAIN", "#^(?:[A-Z0-9_](?:[A-Z0-9\-_]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}$#i");
 	define("VALID_EMPTY_DOMAIN", "#^$#");
 }
 define("VALID_TEMPLATE_DOMAIN", "#^(?:(?:[A-Z0-9_](?:[A-Z0-9\-_]{0,61}[A-Z0-9])?\.)*(?:[A-Z]{2,6}|\[ZONE\])|(?:\[ZONE\]))$#i");
