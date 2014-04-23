@@ -101,7 +101,7 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 	public function test_validate_zone() {
 		// Wrong identifier, type, master and templates.
 		$data = array(
-			"identifier" => "_example.com", 
+			"identifier" => "\$_example.com",
 			"name" => "example.com", 
 			"type" => "master",
 			"master" => "85.158.202.321",
