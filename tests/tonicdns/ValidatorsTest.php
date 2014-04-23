@@ -267,9 +267,9 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 	public function test_validate_record() {
 		echo "\n";
 
-		// Missing content
+		// Missing content and too long name
 		$data = array(
-			"name" => "example.toolongtld",
+			"name" => "example.toolongtldtoolongtldtoolongtldtoolongtldtoolongtldtoolongtld1",
 			"type" => "A",
 			"content" => ""
 		);
@@ -278,6 +278,13 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 
 		$this->assertFalse($validator->validates());
 		$this->assertCount(2, $validator->getErrors());
+
+		// Missing content only
+		$data['name'] = "example.longtld";
+		$validator = new RecordValidator($data);
+
+		$this->assertFalse($validator->validates());
+		$this->assertCount(1, $validator->getErrors());
 
 		// Missing type
 		$data['name'] = "example.com";
@@ -341,7 +348,7 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 
 		// Invalid NS record
 		$data['type'] = "NS";
-		$data['content'] = "example.toolongtld";
+		$data['content'] = "example.toolongtldtoolongtldtoolongtldtoolongtldtoolongtldtoolongtld1";
 
 		$validator = new RecordValidator($data);
 
