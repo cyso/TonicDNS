@@ -728,12 +728,6 @@ class RecordValidator extends Validator {
 					}
 					break;
 				case 1:
-					if (filter_var($parts[$i], FILTER_VALIDATE_EMAIL) === false && preg_match(VALID_DOMAIN, $parts[$i]) === 0) {
-						return array(
-							"message" => $prefix . "A SOA record must provide a valid email address as hostmaster.",
-							"code" => "RECORD_RHS_SOA_INVALID_PART_" . $i
-						);
-					}
 					break;
 				case 2:
 				case 3:
