@@ -96,6 +96,32 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 
 		$this->assertFalse($validator->validates());
 		$this->assertCount(1, $validator->getErrors());
+
+		// Incomplete record name
+		$data = array(
+			"identifier" => "test_template", 
+			"description" => "Test Description", 
+			"entries" => array(
+				array(
+					"name" => "example",
+					"type" => "CNAME",
+					"content" => "example.com"
+				)
+			)
+		);
+
+		$validator = new TemplateValidator($data);
+
+		$this->assertFalse($validator->validates());
+		$this->assertCount(1, $validator->getErrors());
+
+		// Fixed incomplete template name
+		$data['entries'][0]['name'] = 'example.[ZONE]';
+
+		$validator = new TemplateValidator($data);
+
+		$this->assertTrue($validator->validates());
+		$this->assertEmpty($validator->getErrors());
 	}
 
 	public function test_validate_zone() {
