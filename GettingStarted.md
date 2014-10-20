@@ -443,7 +443,7 @@ Delete records from the zone.
 
 ### API URI ###
 
-* /zone/:identifier
+* /zone
 
 ### Example ###
 
