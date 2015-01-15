@@ -35,7 +35,7 @@ if (ValidatorConfig::BIND_COMPATABILITY === true) {
 	define("VALID_DOMAIN", "#^(?:[A-Z0-9](?:[A-Z0-9\-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}[\.]?$#i");
 	define("VALID_EMPTY_DOMAIN", "#^\.$|^$#");
 } else {
-	define("VALID_DOMAIN", "#^((?:[A-Z0-9](?:[A-Z0-9\-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}|(?:[A-Z0-9]{2,61}))$#i");
+	define("VALID_DOMAIN", "#^((?:[A-Z0-9](?:[A-Z0-9\-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}|(?:[A-Z0-9]{2,61}))\.?$#i");
 	define("VALID_EMPTY_DOMAIN", "#^$#");
 }
 define("VALID_TEMPLATE_DOMAIN", "#^(?:(?:[A-Z0-9_](?:[A-Z0-9\-_]{0,61}[A-Z0-9])?\.)*(?:[A-Z]{2,6}|\[ZONE\])|(?:\[ZONE\]))$#i");
