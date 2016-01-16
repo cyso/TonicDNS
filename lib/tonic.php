@@ -322,6 +322,8 @@ class Request {
                 $raw_headers = apache_request_headers();
         } else if (function_exists("nsapi_request_headers")) {
                 $raw_headers = nsapi_request_headers();
+        } else {
+                $raw_headers = getallheaders();
         }
         foreach ($raw_headers as $k => $h) {
                 switch (strtolower($k)) {
@@ -943,6 +945,23 @@ class Response {
         
     }
     
+}
+
+if (!function_exists('getallheaders')) {
+    function getallheaders()
+    {
+        if (!is_array($_SERVER)) {
+            return array();
+        }
+
+        $headers = array();
+        foreach ($_SERVER as $name => $value) {
+            if (substr($name, 0, 5) == 'HTTP_') {
+                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
+            }
+        }
+        return $headers;
+    }
 }
 
 ?>
