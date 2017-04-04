@@ -1,0 +1,19 @@
+<IfModule mod_ssl.c>
+    <VirtualHost _default_:443>
+	ServerAdmin webmaster@localhost
+	AssignUserId tonicdns tonicdns
+	ErrorLog        {{LOGDIR}}/tonic-error.log
+	LogLevel warn
+	CustomLog       {{LOGDIR}}/tonic-access.log combined
+	SSLEngine On
+	SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
+	SSLCertificateKeyFile	/etc/ssl/private/ssl-cert-snakeoil.key
+	DocumentRoot    {{DOCROOT}}/TonicDNS/docroot
+	<Directory {{DOCROOT}}/TonicDNS>
+            AllowOverride All
+            Options +FollowSymLinks
+            Order allow,deny
+            Allow from all
+	</Directory>
+    </VirtualHost>
+</IfModule>
