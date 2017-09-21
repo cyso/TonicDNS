@@ -241,19 +241,26 @@ class HelperFunctions {
 			}
 		}
 
-		foreach ($filters as $f) {
-			if ($f['type'] == "MX" || $f['type'] == "SRV") {
-				$clause[] = sprintf("id NOT IN (SELECT id FROM %s WHERE name = ? AND type = ? AND content = ? AND prio = ?)", PowerDNSConfig::DB_RECORD_TABLE);
-				$parameters[] = $f['name'];
-				$parameters[] = $f['type'];
-				$parameters[] = $f['content'];
-				$parameters[] = $f['priority'];
-			} else {
-				$clause[] = sprintf("id NOT IN (SELECT id FROM %s WHERE name = ? AND type = ? AND content = ?)", PowerDNSConfig::DB_RECORD_TABLE);
-				$parameters[] = $f['name'];
-				$parameters[] = $f['type'];
-				$parameters[] = $f['content'];
+		if (count($filters) > 0) {
+			$subclause = array();
+
+			foreach ($filters as $f) {
+				if ($f['type'] == "MX" || $f['type'] == "SRV") {
+					$subclause[] = "(name = ? AND type = ? AND content = ? AND prio = ?)";
+					$parameters[] = $f['name'];
+					$parameters[] = $f['type'];
+					$parameters[] = $f['content'];
+					$parameters[] = $f['priority'];
+				} else {
+					$subclause[] = "(name = ? AND type = ? AND content = ?)";
+					$parameters[] = $f['name'];
+					$parameters[] = $f['type'];
+					$parameters[] = $f['content'];
+				}
 			}
+
+			$c = sprintf("id NOT IN (SELECT id FROM %s WHERE %s)", PowerDNSConfig::DB_RECORD_TABLE, implode(" OR ", $subclause));
+			$clause[] = $c;
 		}
 
 		if (count($clause) > 0) {
