@@ -44,8 +44,8 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 
 	public function test_validate_template() {
 		$data = array(
-			"identifier" => "test_template", 
-			"description" => "Test Description", 
+			"identifier" => "test_template",
+			"description" => "Test Description",
 			"entries" => array(
 				array(
 					"name" => "[ZONE].example.toolongtld",
@@ -99,8 +99,8 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 
 		// Incomplete record name
 		$data = array(
-			"identifier" => "test_template", 
-			"description" => "Test Description", 
+			"identifier" => "test_template",
+			"description" => "Test Description",
 			"entries" => array(
 				array(
 					"name" => "example",
@@ -122,13 +122,21 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 
 		$this->assertTrue($validator->validates());
 		$this->assertEmpty($validator->getErrors());
+
+		// Fixed wildcard template name
+		$data['entries'][0]['name'] = '*.[ZONE]';
+
+		$validator = new TemplateValidator($data);
+
+		$this->assertTrue($validator->validates());
+		$this->assertEmpty($validator->getErrors());
 	}
 
 	public function test_validate_zone() {
 		// Wrong identifier, type, master and templates.
 		$data = array(
 			"identifier" => "\$_example.com",
-			"name" => "example.com", 
+			"name" => "example.com",
 			"type" => "master",
 			"master" => "85.158.202.321",
 			"templates" => "test_template++",
