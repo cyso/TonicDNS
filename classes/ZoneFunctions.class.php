@@ -123,7 +123,8 @@ class ZoneFunctions {
 			        r.id as r_id, r.name as r_name, r.type as r_type, r.content as r_content, r.ttl as r_ttl, r.prio as r_prio, r.change_date as r_change_date
 			 FROM `%s` z
 			 LEFT JOIN `%s` r ON (z.id = r.domain_id)
-			 WHERE z.name = :name AND r.type IS NOT NULL
+			 WHERE z.name = :name
+			 AND (r.type IS NOT NULL OR z.type = 'SLAVE')
 			 ORDER BY CAST(r_name AS UNSIGNED) ASC,
 			 r_name ASC,
 			 r_type DESC,
