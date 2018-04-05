@@ -28,6 +28,7 @@ define("NAPTR_SERVICE_VALID", "#^(?:[a-z][a-z0-9]{0,31})?$|^(?:[a-z][a-z0-9]{0,3
 define("NAPTR_REGEX_VALID_DELIMITER", "#^[^i0-9\\\\]$#");
 define("NAPTR_REGEX_VALID_BACKREF", "#^\\\\[0-9]$#");
 define("NAPTR_REGEX_VALID_FLAG", "#^[i]?$#");
+define("CAA_VALID_TAG", "#^(?:issue|issuewild|iodef|auth|path|policy)$#");
 define("VALID_TOKEN", "#^[0-9a-f]{40}$#");
 define("VALID_HEX_40", "#^[0-9a-f]{40}$#i");
 define("VALID_ZONE_TYPE", "#^MASTER$|^SLAVE$|^NATIVE$#");
@@ -43,7 +44,7 @@ define("VALID_QUERY", "#^[a-zA-Z0-9\-\.*]+$#");
 define("VALID_RANGE_QUERY", "#^[a-zA-Z0-9\-\.:*,/]+|$#");
 define("VALID_RECORD_NAME", "#^(?:\*\.)?(?:[A-Z0-9_](?:[A-Z0-9\-_]{0,61}[A-Z0-9])?\.)+[A-Z]{2,61}$#i");
 define("VALID_TEMPLATE_NAME", "#^(?:(?:\*\.)?(?:[A-Z0-9_](?:[A-Z0-9\-_]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,61}|\[ZONE\])|(?:\[ZONE\])|(?:\*\.\[ZONE\]))$#i");
-define("VALID_RECORD_TYPE", "#^A|AAAA|CNAME|MX|NAPTR|NS|PTR|RP|SOA|SPF|SSHFP|SRV|TXT$#");
+define("VALID_RECORD_TYPE", "#^(?:A|AAAA|CAA|CNAME|MX|NAPTR|NS|PTR|RP|SOA|SPF|SSHFP|SRV|TXT)$#");
 define("VALID_IPV4", "#^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$#");
 define("VALID_IPV6", "#^(?:(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}|(?=(?:[A-F0-9]{0,4}:){0,7}[A-F0-9]{0,4}$)(([0-9A-F]{1,4}:){1,7}|:)((:[0-9A-F]{1,4}){1,7}|:))$#i");
 define("VALID_IPV4_RANGE", "#^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/[0-9]{1,2}$#");
@@ -848,6 +849,49 @@ class RecordValidator extends Validator {
 				}
 			}
 			break;
+		case "CAA":
+			$parts = explode(" ", $content, 3);
+			if (count($parts) !== 3) {
+				return array(
+					"message" => $prefix . "A CAA record must provide all 3 parts: <flags> <tag> <value>",
+					"code" => "RECORD_RHS_CAA_PARTS_MISSING"
+				);
+			}
+			for ($i = 0; $i < count($parts); $i++) {
+				switch ($i) {
+				case 0:
+					if (preg_match(VALID_INT, $parts[$i]) === 0) {
+						return array(
+							"message" => $prefix . "A CAA record must provide flags as a valid integer between 0 and 255.",
+							"code" => "RECORD_RHS_CAA_INVALID_PART_0"
+						);
+					}
+					$int_part = intval($parts[$i]);
+					if ($int_part < 0 || $int_part > 255) {
+						return array(
+							"message" => $prefix . "A CAA record must provide flags as a valid integer between 0 and 255.",
+							"code" => "RECORD_RHS_CAA_INVALID_PART_0"
+						);
+					}
+					break;
+				case 1:
+					if (preg_match(CAA_VALID_TAG, $parts[$i]) === 0) {
+						return array(
+							"message" => $prefix . "A CAA record must provide a valid tag, one of: issue, issuewild, iodef, auth, path, policy.",
+							"code" => "RECORD_RHS_CAA_INVALID_PART_1"
+						);
+					}
+					break;
+				case 2:
+					if (preg_match(VALID_QUOTED, $parts[$i]) === 0) {
+						return array(
+							"message" => $prefix . "A CAA record must provide value as a valid quoted string.",
+							"code" => "RECORD_RHS_CAA_INVALID_PART_2"
+						);
+					}
+					break;
+				}
+			}
 		default:
 			break;
 		}

@@ -620,6 +620,42 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 
 		$this->assertTrue($validator->validates());
 		$this->assertEmpty($validator->getErrors());
+
+		// CAA records
+		$data['type'] = "CAA";
+
+		$wrong = array(
+			'only two parts',
+			'a foo "bar"',
+			'0 foo "bar"',
+			'256 issuewild "bar"'
+		);
+
+		$right = array(
+			'0 issue "bar"',
+			'255 issue "comodoca.com"',
+			'7 issue "mailto:foo@bar.com"',
+		);
+
+		foreach($wrong as $w) {
+			printf("Testing /%s/\n", $w);
+			$data['content'] = $w;
+
+			$validator = new RecordValidator($data);
+
+			$this->assertFalse($validator->validates());
+			$this->assertCount(1, $validator->getErrors());
+		}
+
+		foreach($right as $r) {
+			printf("Testing /%s/\n", $r);
+			$data['content'] = $r;
+
+			$validator = new RecordValidator($data);
+
+			$this->assertTrue($validator->validates());
+			$this->assertEmpty($validator->getErrors());
+		}
 	}
 }
 
