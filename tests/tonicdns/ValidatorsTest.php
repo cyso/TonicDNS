@@ -535,8 +535,33 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse($validator->validates());
 		$this->assertCount(1, $validator->getErrors());
 
+		// Invalid SPF record (double quoted)
+		$data['type'] = "SPF";
+		$data['content'] = "\"\"double quoted string\"\"";
+
+		$validator = new RecordValidator($data);
+
+		$this->assertFalse($validator->validates());
+		$this->assertCount(1, $validator->getErrors());
+
+		// Invalid TXT record (double quoted)
+		$data['type'] = "TXT";
+
+		$validator = new RecordValidator($data);
+
+		$this->assertFalse($validator->validates());
+		$this->assertCount(1, $validator->getErrors());
+
 		// Valid TXT/SPF record
 		$data['content'] = '"quoted string"';
+
+		$validator = new RecordValidator($data);
+
+		$this->assertTrue($validator->validates());
+		$this->assertEmpty($validator->getErrors());
+
+		// Empty TXT/SPF record
+		$data['content'] = '""';
 
 		$validator = new RecordValidator($data);
 

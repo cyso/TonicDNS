@@ -765,6 +765,12 @@ class RecordValidator extends Validator {
 					"code" => "RECORD_RHS_INVALID_QUOTED_STRING"
 				);
 			}
+			if (strlen($content) > 2 && (substr($content, 1, 1) == "\"" || substr($content, -2, 1) == "\"")) {
+				return array(
+					"message" => $prefix . "A $type record must provide value as a valid quoted string without inner quotes.",
+					"code" => "RECORD_RHS_INVALID_QUOTED_STRING"
+				);
+			}
 			break;
 		case "SSHFP":
 			$parts = explode(" ", $content);
@@ -889,7 +895,7 @@ class RecordValidator extends Validator {
 							"code" => "RECORD_RHS_CAA_INVALID_PART_2"
 						);
 					}
-					if (substr($parts[$i], 1, 1) == "\"" || substr($parts[$i], -2, 1) == "\"") {
+					if (strlen($content) > 2 && (substr($parts[$i], 1, 1) == "\"" || substr($parts[$i], -2, 1) == "\"")) {
 						return array(
 							"message" => $prefix . "A CAA record must provide value as a valid quoted string without inner quotes.",
 							"code" => "RECORD_RHS_CAA_INVALID_PART_2"
