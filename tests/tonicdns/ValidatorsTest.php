@@ -628,7 +628,8 @@ class ValidatorsTest extends PHPUnit_Framework_TestCase {
 			'only two parts',
 			'a foo "bar"',
 			'0 foo "bar"',
-			'256 issuewild "bar"'
+			'256 issuewild "bar"',
+			'0 issue ""comodoca.com"'
 		);
 
 		$right = array(
