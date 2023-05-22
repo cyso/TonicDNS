@@ -3,6 +3,12 @@
 TonicDNS RESTful API for PowerDNS
 =================================
 
+| :exclamation: This project is dead and will not be updated. It was made at a time that PowerDNS did not have any form of API. |
+|-------------------------------------------------------------------------------------------------------------------------------|
+
+| :memo: We recommend using the [internal PowerDNS REST API](https://doc.powerdns.com/authoritative/http-api/index.html). |
+|-------------------------------------------------------------------------------------------------------------------------|
+
 This a RESTful API for PowerDNS licensed under GPL. It uses the MIT licensed Tonic RESTful library as its base, see peej/tonic on GitHub. All changes to the core Tonic library are released under the original MIT license. See the files for the appropriate license.
 
 Features:
